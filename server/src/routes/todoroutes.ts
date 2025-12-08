@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createTodo, deleteTodo, getTodoById, getTodos, updateTodo } from '../service/todoService';
+import { createTodo, deleteTodo, getTodoById, getTodos, updateTodo, deleteAllTodos } from '../service/todoService';
 
 const router = Router();
 
@@ -64,6 +64,15 @@ router.put("/:id", async (req: Request, res: Response) => {
             return res.status(404).json({message: "Todo not found"});
         }
         res.status(200).json(updatedRecord);
+    } catch (error) {
+        res.status(500).json({message: "Internal Server Error"});
+    }
+});
+
+router.delete("/", async (req: Request, res: Response) => {
+    try {
+        const result = await deleteAllTodos();
+        res.status(200).json({ message: "All todos deleted", count: result.length });
     } catch (error) {
         res.status(500).json({message: "Internal Server Error"});
     }

@@ -9,6 +9,7 @@ export const api =
     fetchTodos: async () => {
         const response = await fetch(API_URL);
         if(!response.ok) {
+            console.log(response);
             throw new Error('Failed to fetch todos');
         }
         return response.json();
@@ -37,5 +38,26 @@ export const api =
         }
         return response.json();
     },
-    
+    updateTodo: async (id: string, input: Partial<Omit<Todo, 'id'>>) => {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(input),
+        });
+        if(!response.ok) {
+            throw new Error('Failed to update todo');
+        }
+        return response.json();
+    },
+    deleteAllTodos: async () => {
+        const response = await fetch(API_URL, {
+            method: 'DELETE',
+        });
+        if(!response.ok) {
+            throw new Error('Failed to delete all todos');
+        }
+        return response.json();
+    },
 }

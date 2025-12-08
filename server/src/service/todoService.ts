@@ -25,8 +25,14 @@ export const updateTodo = async (id:number, todo:Partial<NewTodo>) =>
     return result[0];
 }
 
-export const deleteTodo = async (id:number) => 
+export const deleteTodo = async (id:number) =>
 {
     const result = await db.delete(todos).where(eq(todos.id, id)).returning();
     return result[0];
+};
+
+export const deleteAllTodos = async () =>
+{
+    const result = await db.delete(todos).returning();
+    return result;
 };
