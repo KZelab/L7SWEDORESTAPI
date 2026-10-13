@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Continuous Integration with GitHub Actions | ACCA7023</title>
+  <link rel="icon" type="image/svg+xml" href="https://www.uwtsd.ac.uk/themes/custom/rutherford/images/logo.svg">
+
+  <style>
+    code[class*=language-],pre[class*=language-]{color:#ccc;background:0 0;font-family:Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace;font-size:1em;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:1em;margin:.5em 0;overflow:auto}:not(pre)>code[class*=language-],pre[class*=language-]{background:#2d2d2d}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal}.token.block-comment,.token.cdata,.token.comment,.token.doctype,.token.prolog{color:#999}.token.punctuation{color:#ccc}.token.attr-name,.token.deleted,.token.namespace,.token.tag{color:#e2777a}.token.function-name{color:#6196cc}.token.boolean,.token.function,.token.number{color:#f08d49}.token.class-name,.token.constant,.token.property,.token.symbol{color:#f8c555}.token.atrule,.token.builtin,.token.important,.token.keyword,.token.selector{color:#cc99cd}.token.attr-value,.token.char,.token.regex,.token.string,.token.variable{color:#7ec699}.token.entity,.token.operator,.token.url{color:#67cdcc}.token.bold,.token.important{font-weight:700}.token.italic{font-style:italic}.token.entity{cursor:help}.token.inserted{color:green}
+  </style>
+
+  <style>
+    /* ---- Reset and base ---- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --uwtsd-navy:    #003366;
+      --uwtsd-gold:    #C8A951;
+      --uwtsd-light:   #F4F4F4;
+      --uwtsd-white:   #FFFFFF;
+      --uwtsd-text:    #1A1A1A;
+      --uwtsd-muted:   #555555;
+      --uwtsd-code-bg: #1E1E1E;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--uwtsd-text);
+      background: var(--uwtsd-light);
+    }
+
+    /* ---- Header ---- */
+    .lab-header {
+      background: var(--uwtsd-navy);
+      color: var(--uwtsd-white);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .lab-header img {
+      height: 48px;
+      filter: brightness(0) invert(1);
+    }
+
+    .lab-header-text { flex: 1; }
+
+    .lab-header-text .module-code {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--uwtsd-gold);
+      font-weight: 600;
+    }
+
+    .lab-header-text h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-top: 0.2rem;
+    }
+
+    /* ---- Main content ---- */
+    main {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ---- Sections ---- */
+    .lab-section {
+      background: var(--uwtsd-white);
+      border-radius: 6px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .lab-section h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--uwtsd-navy);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .lab-section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--uwtsd-navy);
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    .lab-section p { margin-bottom: 0.75rem; }
+
+    .lab-section ul,
+    .lab-section ol {
+      padding-left: 1.4rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .lab-section li { margin-bottom: 0.35rem; }
+
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.88em;
+      background: #eef0f4;
+      color: #c0392b;
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    kbd {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.85em;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 0.1em 0.4em;
+    }
+
+    /* ---- Code blocks ---- */
+    pre {
+      background: var(--uwtsd-code-bg) !important;
+      color: #cccccc;
+      border-radius: 6px;
+      padding: 1.1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0.75rem 0 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: none !important;
+      color: inherit !important;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ---- Package table ---- */
+    .pkg-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.93rem;
+      margin-top: 0.5rem;
+    }
+
+    .pkg-table th {
+      background: var(--uwtsd-navy);
+      color: var(--uwtsd-white);
+      text-align: left;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .pkg-table td {
+      padding: 0.7rem 0.85rem;
+      vertical-align: top;
+      border-bottom: 1px solid #e4e8f0;
+    }
+
+    .pkg-table td:first-child { white-space: nowrap; }
+    .pkg-table td:last-child  { white-space: nowrap; }
+
+    .pkg-table tr:last-child td { border-bottom: none; }
+
+    .pkg-table tr:nth-child(even) td { background: #f8f9fc; }
+
+    .pkg-table a { color: var(--uwtsd-navy); font-weight: 600; }
+    .pkg-table a:hover { text-decoration: underline; }
+
+    /* ---- Platform tabs ---- */
+    .tab-bar {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 2px solid #dde3ed;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      background: none;
+      color: var(--uwtsd-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tab-btn:hover { color: var(--uwtsd-navy); }
+
+    .tab-btn.active {
+      color: var(--uwtsd-navy);
+      border-bottom-color: var(--uwtsd-gold);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ---- Task steps ---- */
+    .task-block {
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      background: #f8f9fc;
+    }
+
+    .task-block h3 {
+      font-size: 0.95rem;
+      color: var(--uwtsd-navy);
+      margin-bottom: 0.5rem;
+    }
+
+    /* ---- Code file header ---- */
+    .code-file-header {
+      background: #2d2d2d;
+      color: #888;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.78rem;
+      padding: 0.3rem 1.25rem;
+      border-radius: 6px 6px 0 0;
+      letter-spacing: 0.03em;
+    }
+
+    .code-file-header + pre {
+      border-radius: 0 0 6px 6px !important;
+      margin-top: 0 !important;
+    }
+
+    /* ---- Solution reveal ---- */
+    .solution-btn {
+      display: inline-block;
+      margin: 0.5rem 0 1rem;
+      padding: 0.55rem 1.4rem;
+      background: var(--uwtsd-navy);
+      color: var(--uwtsd-white);
+      border: none;
+      border-radius: 4px;
+      font-size: 0.93rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .solution-btn:hover { background: #004080; }
+
+    .solution-panel { display: none; margin-top: 0.5rem; }
+    .solution-panel.open { display: block; }
+
+    .solution-canvas-wrap {
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+    .solution-canvas-wrap:last-child { margin-bottom: 0; }
+
+    /* ---- Fill-in-the-blank ---- */
+    .fill-blanks-group { margin: 0.5rem 0 0.25rem; }
+
+    .blank-question {
+      margin: 0.6rem 0;
+      line-height: 2.2;
+    }
+
+    .blank-input {
+      display: inline-block;
+      border: none;
+      border-bottom: 2px solid var(--uwtsd-navy);
+      background: transparent;
+      font-family: inherit;
+      font-size: inherit;
+      color: var(--uwtsd-text);
+      padding: 0.05em 0.3em;
+      width: 14em;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      vertical-align: baseline;
+    }
+
+    .blank-input:focus { border-bottom-color: var(--uwtsd-gold); }
+
+    .blank-input.blank-correct {
+      border-bottom-color: #27ae60;
+      background: rgba(39,174,96,0.09);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .blank-input.blank-incorrect {
+      border-bottom-color: #e74c3c;
+      background: rgba(231,76,60,0.09);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .blank-feedback {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-top: 0.2rem;
+      min-height: 1.2em;
+    }
+
+    .feedback-correct { color: #27ae60; }
+    .feedback-incorrect { color: #c0392b; }
+
+    .check-blanks-btn {
+      display: inline-block;
+      margin: 0.75rem 0 0.25rem;
+      padding: 0.5rem 1.2rem;
+      background: var(--uwtsd-gold);
+      color: var(--uwtsd-navy);
+      border: none;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .check-blanks-btn:hover { background: #b8952e; }
+
+    /* ---- Multiple choice ---- */
+    .mc-block { margin: 0.75rem 0 1rem; }
+
+    .mc-item {
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+      background: #fff;
+    }
+
+    .mc-question-text { font-weight: 600; margin-bottom: 0.5rem; }
+
+    .mc-options { display: flex; flex-direction: column; gap: 0; margin: 0.4rem 0; }
+
+    .mc-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.35rem 0.5rem;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.1s;
+    }
+    .mc-option:hover { background: #f0f4ff; }
+
+    .mc-option input[type=radio] { margin-top: 0.2em; flex-shrink: 0; }
+
+    .mc-option.mc-correct   { color: #27ae60; font-weight: 600; }
+    .mc-option.mc-incorrect { color: #e74c3c; }
+
+    .mc-explanation {
+      display: none;
+      font-size: 0.88rem;
+      color: var(--uwtsd-muted);
+      margin-top: 0.4rem;
+      padding: 0.4rem 0.6rem;
+      border-left: 3px solid var(--uwtsd-gold);
+      background: #fffdf0;
+    }
+    .mc-explanation.visible { display: block; }
+
+    .mc-feedback {
+      font-size: 0.82rem;
+      font-weight: 600;
+      min-height: 1.2em;
+      margin-top: 0.25rem;
+    }
+
+    .mc-item-static { margin-bottom: 0.75rem; }
+    .mc-options-static { padding-left: 1.4rem; margin: 0.4rem 0; }
+
+    /* ---- Short answer ---- */
+    .sa-block { margin: 0.75rem 0 1rem; }
+
+    .sa-item {
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+      background: #fff;
+    }
+
+    .sa-question-text { font-weight: 600; margin-bottom: 0.5rem; }
+
+    .sa-textarea {
+      width: 100%;
+      min-height: 6rem;
+      padding: 0.5rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.93rem;
+      border: 1px solid #ccd0da;
+      border-radius: 4px;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+      color: var(--uwtsd-text);
+      background: #fafbfc;
+      box-sizing: border-box;
+    }
+    .sa-textarea:focus { outline: none; border-color: var(--uwtsd-navy); }
+
+    .sa-reveal-btn {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      background: transparent;
+      color: var(--uwtsd-navy);
+      border: 1px solid var(--uwtsd-navy);
+      border-radius: 4px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sa-reveal-btn:hover { background: var(--uwtsd-navy); color: white; }
+
+    .sa-answer-panel {
+      display: none;
+      margin-top: 0.5rem;
+      padding: 0.6rem 0.85rem;
+      background: #f0f4f0;
+      border-left: 3px solid #27ae60;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.93rem;
+    }
+    .sa-answer-panel.visible { display: block; }
+
+    .sa-item-static { margin-bottom: 0.75rem; }
+    .sa-lines {
+      border-bottom: 1px solid #aaa;
+      min-height: 5rem;
+      margin-top: 0.4rem;
+    }
+
+    /* ---- Math blocks (KaTeX pre-rendered) ---- */
+    .math-block {
+      margin: 1rem 0;
+      overflow-x: auto;
+      text-align: center;
+    }
+    .math-block .katex-display { margin: 0; }
+
+    /* ---- Visualization blocks (D3) ---- */
+    .viz-block {
+      margin: 1rem 0;
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* ---- Print stylesheet ---- */
+    @media print {
+      .lab-header { background: white; color: black; border-bottom: 2px solid #003366; }
+      .lab-header img { filter: none; }
+      .lab-header-text .module-code { color: #003366; }
+      .lab-header-text .lab-meta { color: #555; }
+      body { background: white; font-size: 13px; }
+      main { max-width: 100%; margin: 0; padding: 0 1rem; }
+      .lab-section { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+      pre { white-space: pre-wrap; word-break: break-word; }
+      a { color: inherit; text-decoration: none; }
+      .solution-btn { display: none; }
+      .solution-panel { display: block !important; }
+      .check-blanks-btn { display: none; }
+      .blank-input { border-bottom: 1px solid #555; min-width: 8em; background: transparent !important; }
+      .blank-feedback { display: none; }
+      .mc-option { break-inside: avoid; }
+      .mc-option input[type=radio] { display: none; }
+      .sa-reveal-btn { display: none; }
+      .sa-textarea { border: 1px solid #999; background: transparent !important; min-height: 5rem; }
+      .sa-answer-panel { display: block !important; border-left: 2px solid #555; background: #f9f9f9; }
+      @page {
+        margin: 1.8cm 2cm;
+        @top-right { content: "ACCA7023"; font-size: 9pt; color: #555; }
+        @bottom-center { content: counter(page) " of " counter(pages); font-size: 9pt; }
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="lab-header">
+  <img src="https://www.uwtsd.ac.uk/themes/custom/rutherford/images/logo.svg"
+       alt="University of Wales Trinity Saint David">
+  <div class="lab-header-text">
+    <div class="module-code">ACCA7023 - Agile and DevOps</div>
+    <h1>Continuous Integration with GitHub Actions</h1>
+  </div>
+</header>
+
+<main>
+
+  <section class="lab-section">
+    <h2>Overview</h2>
+    <p>Every check built so far, the linter, the unit and integration tests, the coverage gates, the browser tests, the image build and the vulnerability scan, only runs when somebody remembers to run it. This lab hands that job to a machine. You will write a GitHub Actions workflow that runs all of them on every pull request, watch it stop a broken change, and then change the rules on <code>main</code> so that nothing can be merged until the pipeline is green.</p>
+  </section>
+
+  <section class="lab-section">
+    <h2>Learning Objectives</h2>
+    <p>By the end of this lab you will be able to:</p>
+    <ul>
+      <li>Write a GitHub Actions workflow with several jobs and explicit dependencies between them</li>
+      <li>Explain why a pipeline is ordered from the fastest checks to the slowest</li>
+      <li>Diagnose a failed pipeline run from its logs and artefacts</li>
+      <li>Require passing status checks before a pull request can be merged</li>
+      <li>Evaluate what continuous integration guarantees and what it leaves to people</li>
+    </ul>
+  </section>
+
+  <section class="lab-section">
+    <h2>Concept</h2>
+    <p>A check that depends on memory and goodwill is skipped exactly when it matters most: late, under pressure, on the change that "obviously cannot break anything". It also runs on one developer's machine, with that machine's versions and leftovers, so a pass there says little about anywhere else.</p>
+<p><strong>Continuous integration</strong> means every change is merged into a shared line of work frequently, and every change is built and tested automatically by a neutral machine first. In <strong>GitHub Actions</strong> the automation is a <strong>workflow</strong>, a YAML file in <code>.github/workflows</code>. An <code>on</code> section names the <strong>events</strong> that start it. A workflow contains <strong>jobs</strong>. Each job runs on a fresh virtual machine called a <strong>runner</strong> and is a list of <strong>steps</strong>. A step either runs shell commands with <code>run</code> or calls a reusable <strong>action</strong> with <code>uses</code>.</p>
+<p>Jobs run in parallel unless one declares <code>needs</code>, which makes it wait for others and be skipped if they fail. That is how a pipeline <strong>fails fast</strong>: quick, cheap checks go first, and slow, expensive ones only run on changes that have earned it. A step fails when its command exits with a non-zero code, which is why the coverage gate from the Back End Tests and Coverage Gates lab and <code>--exit-code 1</code> on the scanner matter. Each job reports a <strong>status check</strong> on the pull request, and a ruleset can require those checks to pass.</p>
+  </section>
+
+  <section class="lab-section">
+    <h2>Tasks</h2>
+
+    <div class="task-block">
+      <h3>Task 1 - Start a branch</h3>
+      <p>Create an issue named <strong>Run every check on every pull request</strong>, move it to <code>In progress</code>, and start a branch. Before you do, confirm that <code>server/package-lock.json</code>, <code>client/package-lock.json</code> and <code>e2e/package-lock.json</code> are committed. The pipeline installs from them.</p>
+
+
+<pre><code class="language-bash">git switch main
+git pull
+git ls-files | grep package-lock.json
+git switch -c ci/github-actions</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 2 - Write a workflow with one job</h3>
+      
+<p>Create the folders <code>.github/workflows</code> in the root of the repository, and in the inner one a file named <code>ci.yml</code>. Indentation is part of YAML's syntax. Use two spaces per level and never tabs.</p>
+<ul>
+  <li><code>on: pull_request</code> starts the workflow whenever a pull request targeting <code>main</code> is opened or updated.</li>
+  <li><code>permissions: contents: read</code> limits what the workflow's own access token may do to reading the repository. A pipeline should hold the least authority that lets it work.</li>
+  <li><code>defaults</code> makes every <code>run</code> step in the job start in the <code>server</code> folder.</li>
+  <li><code>actions/setup-node</code> installs Node.js 22 and caches downloaded packages between runs, keyed on the lock file.</li>
+  <li>The steps are the commands you have been running by hand, in order from fastest to slowest.</li>
+</ul>
+
+<div class="code-file-header">.github/workflows/ci.yml</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-yaml">name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    name: Server checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Format check
+        run: npm run format:check
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Integration tests
+        run: npm run test:integration
+      - name: Coverage gate
+        run: npm run test:coverage
+      - name: Dependency audit
+        run: npm audit --omit=dev --audit-level=high</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 3 - Open a pull request and watch the pipeline</h3>
+      
+<pre><code class="language-bash">git add .github
+git commit -m &quot;Add CI workflow with server checks&quot;
+git push -u origin ci/github-actions</code></pre>
+
+
+<p>Open a pull request from the branch. Do not merge it. Scroll to the checks section at the bottom of the pull request, or open the <strong>Actions</strong> tab, and click into the running job.</p>
+<p><strong>Success condition:</strong> a job named <strong>Server checks</strong> runs each step in turn and finishes with a green tick. Expand the <strong>Coverage gate</strong> step. The same coverage table you saw on your own machine was produced on a machine you have never touched.</p>
+<p>If the run fails on <strong>Format check</strong>, run <code>npm run format</code> in the <code>server</code> folder, commit and push. The pull request reruns the pipeline by itself.</p>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 4 - Add the client job</h3>
+      <p>Open <code>.github/workflows/ci.yml</code> and add a second job below the first. <code>client:</code> must line up exactly with <code>server:</code>, two spaces in from the margin. This job has no <code>needs</code>, so it runs at the same time as the server job on a separate runner.</p>
+
+<div class="code-file-header">.github/workflows/ci.yml</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-yaml">client:
+    name: Client checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Format check
+        run: npm run format:check
+      - name: Unit and component tests with coverage gate
+        run: npm run test:coverage
+      - name: Build
+        run: npm run build
+      - name: Dependency audit
+        run: npm audit --omit=dev --audit-level=high</code></pre>
+
+<p>Commit and push. <strong>Success condition:</strong> the pull request now shows two checks running side by side, and both go green.</p>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 5 - Add the browser tests job</h3>
+      
+<p>Add a third job. <code>needs: [server, client]</code> makes it wait for both earlier jobs and skips it if either fails. There is no point spending a minute downloading a browser to test code that does not pass its unit tests.</p>
+<p>Complete the three <code>TODO</code> entries.</p>
+<ol>
+  <li><strong>Install dependencies.</strong> Three lines, one per project: <code>npm ci --prefix server</code>, and the same for <code>client</code> and <code>e2e</code>.</li>
+  <li><strong>Build the app.</strong> Two lines: <code>npm run build --prefix client</code>, then the same for <code>server</code>.</li>
+  <li><strong>Run Playwright.</strong> <code>npx playwright test</code>.</li>
+</ol>
+<p>The last step uploads the Playwright report as an <strong>artefact</strong>, a file kept with the run that you can download. <code>if: ${{ !cancelled() }}</code> makes it run even when the tests failed, which is exactly when you want the report.</p>
+
+<div class="code-file-header">.github/workflows/ci.yml</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-yaml">e2e:
+    name: Browser tests
+    runs-on: ubuntu-latest
+    needs: [server, client]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: |
+          # TODO: npm ci for server, client and e2e, using --prefix
+      - name: Build the app
+        run: |
+          # TODO: build the client, then the server, using --prefix
+      - name: Install Chromium
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright
+        working-directory: e2e
+        run: # TODO
+      - name: Upload the Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7</code></pre>
+
+<p>Commit and push. <strong>Success condition:</strong> a <strong>Browser tests</strong> check appears, waits for the first two, then passes with <code>7 passed</code> in its log. <code>--with-deps</code> installs the system libraries Chromium needs, which a fresh runner does not have.</p>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 6 - Add the image job</h3>
+      <p>Add the final job. It builds the image exactly as you did in the Containerising the Application lab, stamps it with the commit identifier as its version, and scans it. <code>github.sha</code> is the full identifier of the commit being tested. The image is built and scanned but not stored anywhere. This job only proves that it <em>can</em> be built and is safe to ship.</p>
+
+<div class="code-file-header">.github/workflows/ci.yml</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-yaml">image:
+    name: Image build and scan
+    runs-on: ubuntu-latest
+    needs: [e2e]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build --build-arg APP_VERSION=${{ github.sha }} -t notes-devops:${{ github.sha }} .
+      - name: Scan the image with Trivy
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            ghcr.io/aquasecurity/trivy:latest image \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            notes-devops:${{ github.sha }}</code></pre>
+
+<p>Commit and push. <strong>Success condition:</strong> four checks, ending with <strong>Image build and scan</strong>, all green. Note the total time from push to the last green tick.</p>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 7 - Push a defect and watch the pipeline stop it</h3>
+      
+<p>Open <code>server/src/routes/notes.ts</code> and change the status code that <code>POST</code> returns for a new note from <code>201</code> to <code>200</code>. It is a plausible slip, and the application still appears to work.</p>
+<p>Commit and push it to the same branch.</p>
+
+
+<pre><code class="language-bash">git commit -am &quot;Change create status code&quot;
+git push</code></pre>
+
+
+<p><strong>Success condition:</strong> <strong>Server checks</strong> fails with a red cross. Open it. The lint, format, type check and unit test steps are green. The failure is in <strong>Integration tests</strong>, and the log names the test, <em>creates a note and returns it with 201</em>, and shows <code>expected 200 to be 201</code>. <strong>Browser tests</strong> and <strong>Image build and scan</strong> show as skipped. They never ran.</p>
+<p>Consider what just happened. The unit tests could not see this defect, because no single function is wrong. The integration test caught it within a minute, and the two slowest jobs cost nothing.</p>
+<p>Restore <code>201</code>, commit and push, and wait for four green checks.</p>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 8 - Make the checks mandatory</h3>
+      
+<p>At the moment a red pipeline is only advice. The merge button still works. Change that.</p>
+<ol>
+  <li>Open <strong>Settings</strong>, <strong>Rules</strong>, <strong>Rulesets</strong>, and edit the <code>protect-main</code> ruleset from the Agile Setup and Git Workflow lab.</li>
+  <li>Turn on <strong>Require status checks to pass</strong>.</li>
+  <li>Add all four checks by name: <code>Server checks</code>, <code>Client checks</code>, <code>Browser tests</code>, <code>Image build and scan</code>. GitHub only offers checks it has already seen run, which is why this step comes after the first pipeline runs.</li>
+  <li>Turn on <strong>Require branches to be up to date before merging</strong>, then save.</li>
+</ol>
+<p><strong>Success condition:</strong> return to the pull request. The merge box now lists the four checks as <strong>Required</strong>. Merge the pull request, closing the issue. It is the first change in this project that could not have been merged broken.</p>
+
+
+<pre><code class="language-bash">git switch main
+git pull</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 9 - Evaluate</h3>
+      <div class="sa-block"><div class="sa-item">
+  <p class="sa-question-text">The pipeline was green and the change was merged. List three kinds of defect that could still have reached main.</p>
+  <textarea class="sa-textarea" rows="4" placeholder="Write your answer here..."></textarea>
+  <button class="sa-reveal-btn" onclick="toggleModelAnswer(this)">Show Model Answer</button>
+  <div class="sa-answer-panel">Anything no test checks for: a missing feature or a misunderstood requirement, behaviour in a browser other than Chromium, performance or memory problems, security flaws that are not known vulnerabilities in a dependency, accessibility barriers a scanner cannot detect, and anything specific to the production environment such as configuration or data. A green pipeline means the checks that exist passed. It is evidence, not proof.</div>
+</div>
+<div class="sa-item">
+  <p class="sa-question-text">Server checks and Client checks run in parallel, while Browser tests waits for both. Explain the reasoning, and one way the arrangement could be made faster at the cost of something else.</p>
+  <textarea class="sa-textarea" rows="4" placeholder="Write your answer here..."></textarea>
+  <button class="sa-reveal-btn" onclick="toggleModelAnswer(this)">Show Model Answer</button>
+  <div class="sa-answer-panel">The two fast jobs are independent, so running them together gives the earliest possible feedback. The browser job is slow and its result is meaningless if the faster checks fail, so making it wait saves runner time and keeps the failure signal clear. It could be made faster overall by running everything in parallel, at the cost of wasted minutes on doomed runs and several red checks for one cause, or by reusing build output between jobs, at the cost of a more complicated workflow.</div>
+</div>
+<div class="sa-item">
+  <p class="sa-question-text">Every job installs its dependencies from scratch on a brand new virtual machine. Is that a weakness or a strength of the design?</p>
+  <textarea class="sa-textarea" rows="4" placeholder="Write your answer here..."></textarea>
+  <button class="sa-reveal-btn" onclick="toggleModelAnswer(this)">Show Model Answer</button>
+  <div class="sa-answer-panel">Both, and a good answer says so. It is slower than reusing a machine, and the repeated work costs minutes. It is also the main guarantee the pipeline offers: nothing is left over from a previous run, so a pass cannot depend on a stale file or a package somebody installed by hand. The build is proven reproducible from the repository alone. Caching recovers some of the speed without giving up that property.</div>
+</div></div>
+    </div>
+
+  </section>
+
+  <section class="lab-section worked-solution">
+    <h2>Solution</h2>
+    <p>Try the tasks above before revealing the solution.</p>
+    <button class="solution-btn" onclick="toggleSolution(this)">Show Solution</button>
+    <div class="solution-panel">
+      <div class="solution-canvas-wrap"><canvas data-code="name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    name: Server checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Format check
+        run: npm run format:check
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Integration tests
+        run: npm run test:integration
+      - name: Coverage gate
+        run: npm run test:coverage
+      - name: Dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+  client:
+    name: Client checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Format check
+        run: npm run format:check
+      - name: Unit and component tests with coverage gate
+        run: npm run test:coverage
+      - name: Build
+        run: npm run build
+      - name: Dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    name: Browser tests
+    runs-on: ubuntu-latest
+    needs: [server, client]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: |
+          npm ci --prefix server
+          npm ci --prefix client
+          npm ci --prefix e2e
+      - name: Build the app
+        run: |
+          npm run build --prefix client
+          npm run build --prefix server
+      - name: Install Chromium
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright
+        working-directory: e2e
+        run: npx playwright test
+      - name: Upload the Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7
+
+  image:
+    name: Image build and scan
+    runs-on: ubuntu-latest
+    needs: [e2e]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build --build-arg APP_VERSION=${{ github.sha }} -t notes-devops:${{ github.sha }} .
+      - name: Scan the image with Trivy
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            ghcr.io/aquasecurity/trivy:latest image \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            notes-devops:${{ github.sha }}" data-filename=".github/workflows/ci.yml" style="display:block;border-radius:6px"></canvas></div>
+    </div>
+  </section>
+</main>
+
+<script>
+  function switchTab(e, id) {
+    const section = e.target.closest('.lab-section');
+    section.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    section.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    section.querySelector('#' + id).classList.add('active');
+  }
+
+  function renderSolutionCanvas(canvas, code, filename) {
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var lineHeight = 19;
+    var headerHeight = filename ? 28 : 0;
+    var padX = 20;
+    var padY = 14;
+    var codeFont = '13px Consolas, "Courier New", monospace';
+    ctx.font = codeFont;
+    var lines = code.split('\n').map(function(l) { return l.replace(/\r$/, ''); });
+    while (lines.length && lines[lines.length - 1] === '') lines.pop();
+    var maxW = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var w = ctx.measureText(lines[i]).width;
+      if (w > maxW) maxW = w;
+    }
+    var containerW = canvas.parentElement ? (canvas.parentElement.clientWidth || 0) : 0;
+    var cssW = Math.max(maxW + padX * 2, containerW || 400);
+    var cssH = lines.length * lineHeight + padY * 2 + headerHeight;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    ctx.scale(dpr, dpr);
+    if (filename) {
+      ctx.fillStyle = '#2d2d2d';
+      ctx.fillRect(0, 0, cssW, headerHeight);
+      ctx.font = '11px Consolas, "Courier New", monospace';
+      ctx.fillStyle = '#888888';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(filename, padX, headerHeight / 2);
+      ctx.fillStyle = '#444444';
+      ctx.fillRect(0, headerHeight - 1, cssW, 1);
+    }
+    ctx.fillStyle = '#1E1E1E';
+    ctx.fillRect(0, headerHeight, cssW, cssH - headerHeight);
+    ctx.font = codeFont;
+    ctx.fillStyle = '#cccccc';
+    ctx.textBaseline = 'top';
+    for (var i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], padX, headerHeight + padY + i * lineHeight);
+    }
+  }
+
+  function toggleSolution(btn) {
+    var panel = btn.nextElementSibling;
+    var open = panel.classList.toggle('open');
+    btn.textContent = open ? 'Hide Solution' : 'Show Solution';
+    if (open) {
+      panel.querySelectorAll('canvas[data-code]').forEach(function(c) {
+        if (!c.dataset.rendered) {
+          renderSolutionCanvas(c, c.dataset.code, c.dataset.filename || '');
+          c.dataset.rendered = '1';
+        }
+      });
+    }
+  }
+
+  function checkBlanks(btn) {
+    var task = btn.closest('.task-block');
+    task.querySelectorAll('.blank-question').forEach(function(q) {
+      var answers = JSON.parse(q.dataset.answers);
+      var inputs = q.querySelectorAll('.blank-input');
+      var allCorrect = true;
+      inputs.forEach(function(input, i) {
+        var expected = [].concat(answers[i]).map(function(s) { return s.toLowerCase().trim(); });
+        var val = input.value.toLowerCase().trim();
+        var ok = expected.indexOf(val) !== -1;
+        input.classList.toggle('blank-correct', ok);
+        input.classList.toggle('blank-incorrect', !ok && val !== '');
+        if (!ok) allCorrect = false;
+      });
+      var fb = q.querySelector('.blank-feedback');
+      fb.textContent = allCorrect ? 'Correct!' : 'Check your answer.';
+      fb.className = 'blank-feedback ' + (allCorrect ? 'feedback-correct' : 'feedback-incorrect');
+    });
+  }
+
+  function revealMCAnswer(radio) {
+    var item    = radio.closest('.mc-item');
+    var correct = parseInt(item.dataset.correct, 10);
+    var radios  = Array.from(item.querySelectorAll('input[type=radio]'));
+    var chosen  = radios.indexOf(radio);
+    item.querySelectorAll('.mc-option').forEach(function(opt, i) {
+      opt.classList.toggle('mc-correct',   i === correct);
+      opt.classList.toggle('mc-incorrect', i === chosen && i !== correct);
+    });
+    var fb = item.querySelector('.mc-feedback');
+    if (fb) {
+      fb.textContent = chosen === correct ? 'Correct!' : 'Incorrect.';
+      fb.className   = 'mc-feedback ' + (chosen === correct ? 'feedback-correct' : 'feedback-incorrect');
+    }
+    var exp = item.querySelector('.mc-explanation');
+    if (exp) exp.classList.add('visible');
+    item.querySelectorAll('input[type=radio]').forEach(function(r) { r.disabled = true; });
+  }
+
+  function toggleModelAnswer(btn) {
+    var panel = btn.nextElementSibling;
+    var open  = panel.classList.toggle('visible');
+    btn.textContent = open ? 'Hide Model Answer' : 'Show Model Answer';
+  }
+</script>
+
+<script>/**
+ * Minified by jsDelivr using Terser v5.39.0.
+ * Original file: /npm/prismjs@1.29.0/prism.js
+ *
+ * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
+ */
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(e){var t=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,n=0,a={},r={manual:e.Prism&&e.Prism.manual,disableWorkerMessageHandler:e.Prism&&e.Prism.disableWorkerMessageHandler,util:{encode:function e(t){return t instanceof s?new s(t.type,e(t.content),t.alias):Array.isArray(t)?t.map(e):t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).slice(8,-1)},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++n}),e.__id},clone:function e(t,n){var a,s;switch(n=n||{},r.util.type(t)){case"Object":if(s=r.util.objId(t),n[s])return n[s];for(var i in a={},n[s]=a,t)t.hasOwnProperty(i)&&(a[i]=e(t[i],n));return a;case"Array":return s=r.util.objId(t),n[s]?n[s]:(a=[],n[s]=a,t.forEach((function(t,r){a[r]=e(t,n)})),a);default:return t}},getLanguage:function(e){for(;e;){var n=t.exec(e.className);if(n)return n[1].toLowerCase();e=e.parentElement}return"none"},setLanguage:function(e,n){e.className=e.className.replace(RegExp(t,"gi"),""),e.classList.add("language-"+n)},currentScript:function(){if("undefined"==typeof document)return null;if("currentScript"in document)return document.currentScript;try{throw new Error}catch(a){var e=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(a.stack)||[])[1];if(e){var t=document.getElementsByTagName("script");for(var n in t)if(t[n].src==e)return t[n]}return null}},isActive:function(e,t,n){for(var a="no-"+t;e;){var r=e.classList;if(r.contains(t))return!0;if(r.contains(a))return!1;e=e.parentElement}return!!n}},languages:{plain:a,plaintext:a,text:a,txt:a,extend:function(e,t){var n=r.util.clone(r.languages[e]);for(var a in t)n[a]=t[a];return n},insertBefore:function(e,t,n,a){var s=(a=a||r.languages)[e],i={};for(var o in s)if(s.hasOwnProperty(o)){if(o==t)for(var l in n)n.hasOwnProperty(l)&&(i[l]=n[l]);n.hasOwnProperty(o)||(i[o]=s[o])}var u=a[e];return a[e]=i,r.languages.DFS(r.languages,(function(t,n){n===u&&t!=e&&(this[t]=i)})),i},DFS:function e(t,n,a,s){s=s||{};var i=r.util.objId;for(var o in t)if(t.hasOwnProperty(o)){n.call(t,o,t[o],a||o);var l=t[o],u=r.util.type(l);"Object"!==u||s[i(l)]?"Array"!==u||s[i(l)]||(s[i(l)]=!0,e(l,n,o,s)):(s[i(l)]=!0,e(l,n,null,s))}}},plugins:{},highlightAll:function(e,t){r.highlightAllUnder(document,e,t)},highlightAllUnder:function(e,t,n){var a={callback:n,container:e,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};r.hooks.run("before-highlightall",a),a.elements=Array.prototype.slice.apply(a.container.querySelectorAll(a.selector)),r.hooks.run("before-all-elements-highlight",a);for(var s,i=0;s=a.elements[i++];)r.highlightElement(s,!0===t,a.callback)},highlightElement:function(t,n,a){var s=r.util.getLanguage(t),i=r.languages[s];r.util.setLanguage(t,s);var o=t.parentElement;o&&"pre"===o.nodeName.toLowerCase()&&r.util.setLanguage(o,s);var l={element:t,language:s,grammar:i,code:t.textContent};function u(e){l.highlightedCode=e,r.hooks.run("before-insert",l),l.element.innerHTML=l.highlightedCode,r.hooks.run("after-highlight",l),r.hooks.run("complete",l),a&&a.call(l.element)}if(r.hooks.run("before-sanity-check",l),(o=l.element.parentElement)&&"pre"===o.nodeName.toLowerCase()&&!o.hasAttribute("tabindex")&&o.setAttribute("tabindex","0"),!l.code)return r.hooks.run("complete",l),void(a&&a.call(l.element));if(r.hooks.run("before-highlight",l),l.grammar)if(n&&e.Worker){var g=new Worker(r.filename);g.onmessage=function(e){u(e.data)},g.postMessage(JSON.stringify({language:l.language,code:l.code,immediateClose:!0}))}else u(r.highlight(l.code,l.grammar,l.language));else u(r.util.encode(l.code))},highlight:function(e,t,n){var a={code:e,grammar:t,language:n};if(r.hooks.run("before-tokenize",a),!a.grammar)throw new Error('The language "'+a.language+'" has no grammar.');return a.tokens=r.tokenize(a.code,a.grammar),r.hooks.run("after-tokenize",a),s.stringify(r.util.encode(a.tokens),a.language)},tokenize:function(e,t){var n=t.rest;if(n){for(var a in n)t[a]=n[a];delete t.rest}var r=new l;return u(r,r.head,e),o(e,r,t,r.head,0),function(e){var t=[],n=e.head.next;for(;n!==e.tail;)t.push(n.value),n=n.next;return t}(r)},hooks:{all:{},add:function(e,t){var n=r.hooks.all;n[e]=n[e]||[],n[e].push(t)},run:function(e,t){var n=r.hooks.all[e];if(n&&n.length)for(var a,s=0;a=n[s++];)a(t)}},Token:s};function s(e,t,n,a){this.type=e,this.content=t,this.alias=n,this.length=0|(a||"").length}function i(e,t,n,a){e.lastIndex=t;var r=e.exec(n);if(r&&a&&r[1]){var s=r[1].length;r.index+=s,r[0]=r[0].slice(s)}return r}function o(e,t,n,a,l,c){for(var d in n)if(n.hasOwnProperty(d)&&n[d]){var p=n[d];p=Array.isArray(p)?p:[p];for(var m=0;m<p.length;++m){if(c&&c.cause==d+","+m)return;var h=p[m],f=h.inside,v=!!h.lookbehind,b=!!h.greedy,y=h.alias;if(b&&!h.pattern.global){var F=h.pattern.toString().match(/[imsuy]*$/)[0];h.pattern=RegExp(h.pattern.source,F+"g")}for(var x=h.pattern||h,k=a.next,w=l;k!==t.tail&&!(c&&w>=c.reach);w+=k.value.length,k=k.next){var A=k.value;if(t.length>e.length)return;if(!(A instanceof s)){var P,$=1;if(b){if(!(P=i(x,w,e,v))||P.index>=e.length)break;var S=P.index,E=P.index+P[0].length,_=w;for(_+=k.value.length;S>=_;)_+=(k=k.next).value.length;if(w=_-=k.value.length,k.value instanceof s)continue;for(var j=k;j!==t.tail&&(_<E||"string"==typeof j.value);j=j.next)$++,_+=j.value.length;$--,A=e.slice(w,_),P.index-=w}else if(!(P=i(x,0,A,v)))continue;S=P.index;var C=P[0],L=A.slice(0,S),z=A.slice(S+C.length),O=w+A.length;c&&O>c.reach&&(c.reach=O);var T=k.prev;if(L&&(T=u(t,T,L),w+=L.length),g(t,T,$),k=u(t,T,new s(d,f?r.tokenize(C,f):C,y,C)),z&&u(t,k,z),$>1){var M={cause:d+","+m,reach:O};o(e,t,n,k.prev,w,M),c&&M.reach>c.reach&&(c.reach=M.reach)}}}}}}function l(){var e={value:null,prev:null,next:null},t={value:null,prev:e,next:null};e.next=t,this.head=e,this.tail=t,this.length=0}function u(e,t,n){var a=t.next,r={value:n,prev:t,next:a};return t.next=r,a.prev=r,e.length++,r}function g(e,t,n){for(var a=t.next,r=0;r<n&&a!==e.tail;r++)a=a.next;t.next=a,a.prev=t,e.length-=r}if(e.Prism=r,s.stringify=function e(t,n){if("string"==typeof t)return t;if(Array.isArray(t)){var a="";return t.forEach((function(t){a+=e(t,n)})),a}var s={type:t.type,content:e(t.content,n),tag:"span",classes:["token",t.type],attributes:{},language:n},i=t.alias;i&&(Array.isArray(i)?Array.prototype.push.apply(s.classes,i):s.classes.push(i)),r.hooks.run("wrap",s);var o="";for(var l in s.attributes)o+=" "+l+'="'+(s.attributes[l]||"").replace(/"/g,"&quot;")+'"';return"<"+s.tag+' class="'+s.classes.join(" ")+'"'+o+">"+s.content+"</"+s.tag+">"},!e.document)return e.addEventListener?(r.disableWorkerMessageHandler||e.addEventListener("message",(function(t){var n=JSON.parse(t.data),a=n.language,s=n.code,i=n.immediateClose;e.postMessage(r.highlight(s,r.languages[a],a)),i&&e.close()}),!1),r):r;var c=r.util.currentScript();function d(){r.manual||r.highlightAll()}if(c&&(r.filename=c.src,c.hasAttribute("data-manual")&&(r.manual=!0)),!r.manual){var p=document.readyState;"loading"===p||"interactive"===p&&c&&c.defer?document.addEventListener("DOMContentLoaded",d):window.requestAnimationFrame?window.requestAnimationFrame(d):window.setTimeout(d,16)}return r}(_self);
+/**
+ * Prism: Lightweight, robust, elegant syntax highlighting
+ *
+ * @license MIT <https://opensource.org/licenses/MIT>
+ * @author Lea Verou <https://lea.verou.me>
+ * @namespace
+ * @public
+ */"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism),Prism.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},Prism.languages.markup.tag.inside["attr-value"].inside.entity=Prism.languages.markup.entity,Prism.languages.markup.doctype.inside["internal-subset"].inside=Prism.languages.markup,Prism.hooks.add("wrap",(function(e){"entity"===e.type&&(e.attributes.title=e.content.replace(/&amp;/,"&"))})),Object.defineProperty(Prism.languages.markup.tag,"addInlined",{value:function(e,t){var n={};n["language-"+t]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:Prism.languages[t]},n.cdata=/^<!\[CDATA\[|\]\]>$/i;var a={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:n}};a["language-"+t]={pattern:/[\s\S]+/,inside:Prism.languages[t]};var r={};r[e]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,(function(){return e})),"i"),lookbehind:!0,greedy:!0,inside:a},Prism.languages.insertBefore("markup","cdata",r)}}),Object.defineProperty(Prism.languages.markup.tag,"addAttribute",{value:function(e,t){Prism.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+e+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[t,"language-"+t],inside:Prism.languages[t]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),Prism.languages.html=Prism.languages.markup,Prism.languages.mathml=Prism.languages.markup,Prism.languages.svg=Prism.languages.markup,Prism.languages.xml=Prism.languages.extend("markup",{}),Prism.languages.ssml=Prism.languages.xml,Prism.languages.atom=Prism.languages.xml,Prism.languages.rss=Prism.languages.xml,function(e){var t=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;e.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+t.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+t.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+t.source+"$"),alias:"url"}}},selector:{pattern:RegExp("(^|[{}\\s])[^{}\\s](?:[^{};\"'\\s]|\\s+(?![\\s{])|"+t.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:t,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},e.languages.css.atrule.inside.rest=e.languages.css;var n=e.languages.markup;n&&(n.tag.addInlined("style","css"),n.tag.addAttribute("style","css"))}(Prism),Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},Prism.languages.javascript=Prism.languages.extend("clike",{"class-name":[Prism.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),Prism.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,Prism.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:Prism.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:Prism.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),Prism.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:Prism.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),Prism.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),Prism.languages.markup&&(Prism.languages.markup.tag.addInlined("script","javascript"),Prism.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),Prism.languages.js=Prism.languages.javascript,function(){if(void 0!==Prism&&"undefined"!=typeof document){Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var e={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},t="data-src-status",n="loading",a="loaded",r="pre[data-src]:not(["+t+'="'+a+'"]):not(['+t+'="'+n+'"])';Prism.hooks.add("before-highlightall",(function(e){e.selector+=", "+r})),Prism.hooks.add("before-sanity-check",(function(s){var i=s.element;if(i.matches(r)){s.code="",i.setAttribute(t,n);var o=i.appendChild(document.createElement("CODE"));o.textContent="Loading…";var l=i.getAttribute("data-src"),u=s.language;if("none"===u){var g=(/\.(\w+)$/.exec(l)||[,"none"])[1];u=e[g]||g}Prism.util.setLanguage(o,u),Prism.util.setLanguage(i,u);var c=Prism.plugins.autoloader;c&&c.loadLanguages(u),function(e,t,n){var a=new XMLHttpRequest;a.open("GET",e,!0),a.onreadystatechange=function(){4==a.readyState&&(a.status<400&&a.responseText?t(a.responseText):a.status>=400?n("✖ Error "+a.status+" while fetching file: "+a.statusText):n("✖ Error: File does not exist or is empty"))},a.send(null)}(l,(function(e){i.setAttribute(t,a);var n=function(e){var t=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(e||"");if(t){var n=Number(t[1]),a=t[2],r=t[3];return a?r?[n,Number(r)]:[n,void 0]:[n,n]}}(i.getAttribute("data-range"));if(n){var r=e.split(/\r\n?|\n/g),s=n[0],l=null==n[1]?r.length:n[1];s<0&&(s+=r.length),s=Math.max(0,Math.min(s-1,r.length)),l<0&&(l+=r.length),l=Math.max(0,Math.min(l,r.length)),e=r.slice(s,l).join("\n"),i.hasAttribute("data-start")||i.setAttribute("data-start",String(s+1))}o.textContent=e,Prism.highlightElement(o)}),(function(e){i.setAttribute(t,"failed"),o.textContent=e}))}})),Prism.plugins.fileHighlight={highlight:function(e){for(var t,n=(e||document).querySelectorAll(r),a=0;t=n[a++];)Prism.highlightElement(t)}};var s=!1;Prism.fileHighlight=function(){s||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),s=!0),Prism.plugins.fileHighlight.highlight.apply(this,arguments)}}}();
+//# sourceMappingURL=/sm/1f55244a569fc0911044b5e4725a97872b6d85b0662a3429a809bb62f713c381.map
+!function(e){var n=/[*&][^\s[\]{},]+/,r=/!(?:<[\w\-%#;/?:@&=+$,.!~*'()[\]]+>|(?:[a-zA-Z\d-]*!)?[\w\-%#;/?:@&=+$.~*'()]+)?/,t="(?:"+r.source+"(?:[ \t]+"+n.source+")?|"+n.source+"(?:[ \t]+"+r.source+")?)",a="(?:[^\\s\\x00-\\x08\\x0e-\\x1f!\"#%&'*,\\-:>?@[\\]`{|}\\x7f-\\x84\\x86-\\x9f\\ud800-\\udfff\\ufffe\\uffff]|[?:-]<PLAIN>)(?:[ \t]*(?:(?![#:])<PLAIN>|:<PLAIN>))*".replace(/<PLAIN>/g,(function(){return"[^\\s\\x00-\\x08\\x0e-\\x1f,[\\]{}\\x7f-\\x84\\x86-\\x9f\\ud800-\\udfff\\ufffe\\uffff]"})),d="\"(?:[^\"\\\\\r\n]|\\\\.)*\"|'(?:[^'\\\\\r\n]|\\\\.)*'";function o(e,n){n=(n||"").replace(/m/g,"")+"m";var r="([:\\-,[{]\\s*(?:\\s<<prop>>[ \t]+)?)(?:<<value>>)(?=[ \t]*(?:$|,|\\]|\\}|(?:[\r\n]\\s*)?#))".replace(/<<prop>>/g,(function(){return t})).replace(/<<value>>/g,(function(){return e}));return RegExp(r,n)}e.languages.yaml={scalar:{pattern:RegExp("([\\-:]\\s*(?:\\s<<prop>>[ \t]+)?[|>])[ \t]*(?:((?:\r?\n|\r)[ \t]+)\\S[^\r\n]*(?:\\2[^\r\n]+)*)".replace(/<<prop>>/g,(function(){return t}))),lookbehind:!0,alias:"string"},comment:/#.*/,key:{pattern:RegExp("((?:^|[:\\-,[{\r\n?])[ \t]*(?:<<prop>>[ \t]+)?)<<key>>(?=\\s*:\\s)".replace(/<<prop>>/g,(function(){return t})).replace(/<<key>>/g,(function(){return"(?:"+a+"|"+d+")"}))),lookbehind:!0,greedy:!0,alias:"atrule"},directive:{pattern:/(^[ \t]*)%.+/m,lookbehind:!0,alias:"important"},datetime:{pattern:o("\\d{4}-\\d\\d?-\\d\\d?(?:[tT]|[ \t]+)\\d\\d?:\\d{2}:\\d{2}(?:\\.\\d*)?(?:[ \t]*(?:Z|[-+]\\d\\d?(?::\\d{2})?))?|\\d{4}-\\d{2}-\\d{2}|\\d\\d?:\\d{2}(?::\\d{2}(?:\\.\\d*)?)?"),lookbehind:!0,alias:"number"},boolean:{pattern:o("false|true","i"),lookbehind:!0,alias:"important"},null:{pattern:o("null|~","i"),lookbehind:!0,alias:"important"},string:{pattern:o(d),lookbehind:!0,greedy:!0},number:{pattern:o("[+-]?(?:0x[\\da-f]+|0o[0-7]+|(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:e[+-]?\\d+)?|\\.inf|\\.nan)","i"),lookbehind:!0},tag:r,important:n,punctuation:/---|[:[\]{}\-,|>?]|\.\.\./},e.languages.yml=e.languages.yaml}(Prism);
+!function(e){var t="\\b(?:BASH|BASHOPTS|BASH_ALIASES|BASH_ARGC|BASH_ARGV|BASH_CMDS|BASH_COMPLETION_COMPAT_DIR|BASH_LINENO|BASH_REMATCH|BASH_SOURCE|BASH_VERSINFO|BASH_VERSION|COLORTERM|COLUMNS|COMP_WORDBREAKS|DBUS_SESSION_BUS_ADDRESS|DEFAULTS_PATH|DESKTOP_SESSION|DIRSTACK|DISPLAY|EUID|GDMSESSION|GDM_LANG|GNOME_KEYRING_CONTROL|GNOME_KEYRING_PID|GPG_AGENT_INFO|GROUPS|HISTCONTROL|HISTFILE|HISTFILESIZE|HISTSIZE|HOME|HOSTNAME|HOSTTYPE|IFS|INSTANCE|JOB|LANG|LANGUAGE|LC_ADDRESS|LC_ALL|LC_IDENTIFICATION|LC_MEASUREMENT|LC_MONETARY|LC_NAME|LC_NUMERIC|LC_PAPER|LC_TELEPHONE|LC_TIME|LESSCLOSE|LESSOPEN|LINES|LOGNAME|LS_COLORS|MACHTYPE|MAILCHECK|MANDATORY_PATH|NO_AT_BRIDGE|OLDPWD|OPTERR|OPTIND|ORBIT_SOCKETDIR|OSTYPE|PAPERSIZE|PATH|PIPESTATUS|PPID|PS1|PS2|PS3|PS4|PWD|RANDOM|REPLY|SECONDS|SELINUX_INIT|SESSION|SESSIONTYPE|SESSION_MANAGER|SHELL|SHELLOPTS|SHLVL|SSH_AUTH_SOCK|TERM|UID|UPSTART_EVENTS|UPSTART_INSTANCE|UPSTART_JOB|UPSTART_SESSION|USER|WINDOWID|XAUTHORITY|XDG_CONFIG_DIRS|XDG_CURRENT_DESKTOP|XDG_DATA_DIRS|XDG_GREETER_DATA_DIR|XDG_MENU_PREFIX|XDG_RUNTIME_DIR|XDG_SEAT|XDG_SEAT_PATH|XDG_SESSION_DESKTOP|XDG_SESSION_ID|XDG_SESSION_PATH|XDG_SESSION_TYPE|XDG_VTNR|XMODIFIERS)\\b",a={pattern:/(^(["']?)\w+\2)[ \t]+\S.*/,lookbehind:!0,alias:"punctuation",inside:null},n={bash:a,environment:{pattern:RegExp("\\$"+t),alias:"constant"},variable:[{pattern:/\$?\(\([\s\S]+?\)\)/,greedy:!0,inside:{variable:[{pattern:/(^\$\(\([\s\S]+)\)\)/,lookbehind:!0},/^\$\(\(/],number:/\b0x[\dA-Fa-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:[Ee]-?\d+)?/,operator:/--|\+\+|\*\*=?|<<=?|>>=?|&&|\|\||[=!+\-*/%<>^&|]=?|[?~:]/,punctuation:/\(\(?|\)\)?|,|;/}},{pattern:/\$\((?:\([^)]+\)|[^()])+\)|`[^`]+`/,greedy:!0,inside:{variable:/^\$\(|^`|\)$|`$/}},{pattern:/\$\{[^}]+\}/,greedy:!0,inside:{operator:/:[-=?+]?|[!\/]|##?|%%?|\^\^?|,,?/,punctuation:/[\[\]]/,environment:{pattern:RegExp("(\\{)"+t),lookbehind:!0,alias:"constant"}}},/\$(?:\w+|[#?*!@$])/],entity:/\\(?:[abceEfnrtv\\"]|O?[0-7]{1,3}|U[0-9a-fA-F]{8}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{1,2})/};e.languages.bash={shebang:{pattern:/^#!\s*\/.*/,alias:"important"},comment:{pattern:/(^|[^"{\\$])#.*/,lookbehind:!0},"function-name":[{pattern:/(\bfunction\s+)[\w-]+(?=(?:\s*\(?:\s*\))?\s*\{)/,lookbehind:!0,alias:"function"},{pattern:/\b[\w-]+(?=\s*\(\s*\)\s*\{)/,alias:"function"}],"for-or-select":{pattern:/(\b(?:for|select)\s+)\w+(?=\s+in\s)/,alias:"variable",lookbehind:!0},"assign-left":{pattern:/(^|[\s;|&]|[<>]\()\w+(?:\.\w+)*(?=\+?=)/,inside:{environment:{pattern:RegExp("(^|[\\s;|&]|[<>]\\()"+t),lookbehind:!0,alias:"constant"}},alias:"variable",lookbehind:!0},parameter:{pattern:/(^|\s)-{1,2}(?:\w+:[+-]?)?\w+(?:\.\w+)*(?=[=\s]|$)/,alias:"variable",lookbehind:!0},string:[{pattern:/((?:^|[^<])<<-?\s*)(\w+)\s[\s\S]*?(?:\r?\n|\r)\2/,lookbehind:!0,greedy:!0,inside:n},{pattern:/((?:^|[^<])<<-?\s*)(["'])(\w+)\2\s[\s\S]*?(?:\r?\n|\r)\3/,lookbehind:!0,greedy:!0,inside:{bash:a}},{pattern:/(^|[^\\](?:\\\\)*)"(?:\\[\s\S]|\$\([^)]+\)|\$(?!\()|`[^`]+`|[^"\\`$])*"/,lookbehind:!0,greedy:!0,inside:n},{pattern:/(^|[^$\\])'[^']*'/,lookbehind:!0,greedy:!0},{pattern:/\$'(?:[^'\\]|\\[\s\S])*'/,greedy:!0,inside:{entity:n.entity}}],environment:{pattern:RegExp("\\$?"+t),alias:"constant"},variable:n.variable,function:{pattern:/(^|[\s;|&]|[<>]\()(?:add|apropos|apt|apt-cache|apt-get|aptitude|aspell|automysqlbackup|awk|basename|bash|bc|bconsole|bg|bzip2|cal|cargo|cat|cfdisk|chgrp|chkconfig|chmod|chown|chroot|cksum|clear|cmp|column|comm|composer|cp|cron|crontab|csplit|curl|cut|date|dc|dd|ddrescue|debootstrap|df|diff|diff3|dig|dir|dircolors|dirname|dirs|dmesg|docker|docker-compose|du|egrep|eject|env|ethtool|expand|expect|expr|fdformat|fdisk|fg|fgrep|file|find|fmt|fold|format|free|fsck|ftp|fuser|gawk|git|gparted|grep|groupadd|groupdel|groupmod|groups|grub-mkconfig|gzip|halt|head|hg|history|host|hostname|htop|iconv|id|ifconfig|ifdown|ifup|import|install|ip|java|jobs|join|kill|killall|less|link|ln|locate|logname|logrotate|look|lpc|lpr|lprint|lprintd|lprintq|lprm|ls|lsof|lynx|make|man|mc|mdadm|mkconfig|mkdir|mke2fs|mkfifo|mkfs|mkisofs|mknod|mkswap|mmv|more|most|mount|mtools|mtr|mutt|mv|nano|nc|netstat|nice|nl|node|nohup|notify-send|npm|nslookup|op|open|parted|passwd|paste|pathchk|ping|pkill|pnpm|podman|podman-compose|popd|pr|printcap|printenv|ps|pushd|pv|quota|quotacheck|quotactl|ram|rar|rcp|reboot|remsync|rename|renice|rev|rm|rmdir|rpm|rsync|scp|screen|sdiff|sed|sendmail|seq|service|sftp|sh|shellcheck|shuf|shutdown|sleep|slocate|sort|split|ssh|stat|strace|su|sudo|sum|suspend|swapon|sync|sysctl|tac|tail|tar|tee|time|timeout|top|touch|tr|traceroute|tsort|tty|umount|uname|unexpand|uniq|units|unrar|unshar|unzip|update-grub|uptime|useradd|userdel|usermod|users|uudecode|uuencode|v|vcpkg|vdir|vi|vim|virsh|vmstat|wait|watch|wc|wget|whereis|which|who|whoami|write|xargs|xdg-open|yarn|yes|zenity|zip|zsh|zypper)(?=$|[)\s;|&])/,lookbehind:!0},keyword:{pattern:/(^|[\s;|&]|[<>]\()(?:case|do|done|elif|else|esac|fi|for|function|if|in|select|then|until|while)(?=$|[)\s;|&])/,lookbehind:!0},builtin:{pattern:/(^|[\s;|&]|[<>]\()(?:\.|:|alias|bind|break|builtin|caller|cd|command|continue|declare|echo|enable|eval|exec|exit|export|getopts|hash|help|let|local|logout|mapfile|printf|pwd|read|readarray|readonly|return|set|shift|shopt|source|test|times|trap|type|typeset|ulimit|umask|unalias|unset)(?=$|[)\s;|&])/,lookbehind:!0,alias:"class-name"},boolean:{pattern:/(^|[\s;|&]|[<>]\()(?:false|true)(?=$|[)\s;|&])/,lookbehind:!0},"file-descriptor":{pattern:/\B&\d\b/,alias:"important"},operator:{pattern:/\d?<>|>\||\+=|=[=~]?|!=?|<<[<-]?|[&\d]?>>|\d[<>]&?|[<>][&=]?|&[>&]?|\|[&|]?/,inside:{"file-descriptor":{pattern:/^\d/,alias:"important"}}},punctuation:/\$?\(\(?|\)\)?|\.\.|[{}[\];\\]/,number:{pattern:/(^|\s)(?:[1-9]\d*|0)(?:[.,]\d+)?\b/,lookbehind:!0}},a.inside=e.languages.bash;for(var s=["comment","function-name","for-or-select","assign-left","parameter","string","environment","function","keyword","builtin","boolean","file-descriptor","operator","punctuation","number"],o=n.variable[1].inside,i=0;i<s.length;i++)o[s[i]]=e.languages.bash[s[i]];e.languages.sh=e.languages.bash,e.languages.shell=e.languages.bash}(Prism);</script>
+
+</body>
+</html>

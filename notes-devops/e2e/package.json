@@ -1,0 +1,20 @@
+{
+  "name": "notes-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser tests for the notes application",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "format:check": "prettier --check .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^22.20.5",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3"
+  }
+}

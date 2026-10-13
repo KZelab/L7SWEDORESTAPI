@@ -1,0 +1,32 @@
+- name: Configure the web servers
+  hosts: web
+  become: true
+
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Remove the page that ships with nginx
+      ansible.builtin.file:
+        path: /var/www/html/index.nginx-debian.html
+        state: absent
+
+    - name: Publish the home page
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        mode: '0644'
+
+    - name: Check whether nginx is running
+      ansible.builtin.command: pgrep -x nginx
+      register: nginx_process
+      changed_when: false
+      failed_when: false
+
+    - name: Start nginx
+      ansible.builtin.command: nginx
+      when: nginx_process.rc != 0

@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notes API and the Repository Pattern | ACCA7023</title>
+  <link rel="icon" type="image/svg+xml" href="https://www.uwtsd.ac.uk/themes/custom/rutherford/images/logo.svg">
+
+  <style>
+    code[class*=language-],pre[class*=language-]{color:#ccc;background:0 0;font-family:Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace;font-size:1em;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:1em;margin:.5em 0;overflow:auto}:not(pre)>code[class*=language-],pre[class*=language-]{background:#2d2d2d}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal}.token.block-comment,.token.cdata,.token.comment,.token.doctype,.token.prolog{color:#999}.token.punctuation{color:#ccc}.token.attr-name,.token.deleted,.token.namespace,.token.tag{color:#e2777a}.token.function-name{color:#6196cc}.token.boolean,.token.function,.token.number{color:#f08d49}.token.class-name,.token.constant,.token.property,.token.symbol{color:#f8c555}.token.atrule,.token.builtin,.token.important,.token.keyword,.token.selector{color:#cc99cd}.token.attr-value,.token.char,.token.regex,.token.string,.token.variable{color:#7ec699}.token.entity,.token.operator,.token.url{color:#67cdcc}.token.bold,.token.important{font-weight:700}.token.italic{font-style:italic}.token.entity{cursor:help}.token.inserted{color:green}
+  </style>
+
+  <style>
+    /* ---- Reset and base ---- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --uwtsd-navy:    #003366;
+      --uwtsd-gold:    #C8A951;
+      --uwtsd-light:   #F4F4F4;
+      --uwtsd-white:   #FFFFFF;
+      --uwtsd-text:    #1A1A1A;
+      --uwtsd-muted:   #555555;
+      --uwtsd-code-bg: #1E1E1E;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--uwtsd-text);
+      background: var(--uwtsd-light);
+    }
+
+    /* ---- Header ---- */
+    .lab-header {
+      background: var(--uwtsd-navy);
+      color: var(--uwtsd-white);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .lab-header img {
+      height: 48px;
+      filter: brightness(0) invert(1);
+    }
+
+    .lab-header-text { flex: 1; }
+
+    .lab-header-text .module-code {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--uwtsd-gold);
+      font-weight: 600;
+    }
+
+    .lab-header-text h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-top: 0.2rem;
+    }
+
+    /* ---- Main content ---- */
+    main {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ---- Sections ---- */
+    .lab-section {
+      background: var(--uwtsd-white);
+      border-radius: 6px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .lab-section h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--uwtsd-navy);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .lab-section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--uwtsd-navy);
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    .lab-section p { margin-bottom: 0.75rem; }
+
+    .lab-section ul,
+    .lab-section ol {
+      padding-left: 1.4rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .lab-section li { margin-bottom: 0.35rem; }
+
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.88em;
+      background: #eef0f4;
+      color: #c0392b;
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    kbd {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.85em;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 0.1em 0.4em;
+    }
+
+    /* ---- Code blocks ---- */
+    pre {
+      background: var(--uwtsd-code-bg) !important;
+      color: #cccccc;
+      border-radius: 6px;
+      padding: 1.1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0.75rem 0 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: none !important;
+      color: inherit !important;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ---- Package table ---- */
+    .pkg-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.93rem;
+      margin-top: 0.5rem;
+    }
+
+    .pkg-table th {
+      background: var(--uwtsd-navy);
+      color: var(--uwtsd-white);
+      text-align: left;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .pkg-table td {
+      padding: 0.7rem 0.85rem;
+      vertical-align: top;
+      border-bottom: 1px solid #e4e8f0;
+    }
+
+    .pkg-table td:first-child { white-space: nowrap; }
+    .pkg-table td:last-child  { white-space: nowrap; }
+
+    .pkg-table tr:last-child td { border-bottom: none; }
+
+    .pkg-table tr:nth-child(even) td { background: #f8f9fc; }
+
+    .pkg-table a { color: var(--uwtsd-navy); font-weight: 600; }
+    .pkg-table a:hover { text-decoration: underline; }
+
+    /* ---- Platform tabs ---- */
+    .tab-bar {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 2px solid #dde3ed;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      background: none;
+      color: var(--uwtsd-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tab-btn:hover { color: var(--uwtsd-navy); }
+
+    .tab-btn.active {
+      color: var(--uwtsd-navy);
+      border-bottom-color: var(--uwtsd-gold);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ---- Task steps ---- */
+    .task-block {
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      background: #f8f9fc;
+    }
+
+    .task-block h3 {
+      font-size: 0.95rem;
+      color: var(--uwtsd-navy);
+      margin-bottom: 0.5rem;
+    }
+
+    /* ---- Code file header ---- */
+    .code-file-header {
+      background: #2d2d2d;
+      color: #888;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.78rem;
+      padding: 0.3rem 1.25rem;
+      border-radius: 6px 6px 0 0;
+      letter-spacing: 0.03em;
+    }
+
+    .code-file-header + pre {
+      border-radius: 0 0 6px 6px !important;
+      margin-top: 0 !important;
+    }
+
+    /* ---- Solution reveal ---- */
+    .solution-btn {
+      display: inline-block;
+      margin: 0.5rem 0 1rem;
+      padding: 0.55rem 1.4rem;
+      background: var(--uwtsd-navy);
+      color: var(--uwtsd-white);
+      border: none;
+      border-radius: 4px;
+      font-size: 0.93rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .solution-btn:hover { background: #004080; }
+
+    .solution-panel { display: none; margin-top: 0.5rem; }
+    .solution-panel.open { display: block; }
+
+    .solution-canvas-wrap {
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+    .solution-canvas-wrap:last-child { margin-bottom: 0; }
+
+    /* ---- Fill-in-the-blank ---- */
+    .fill-blanks-group { margin: 0.5rem 0 0.25rem; }
+
+    .blank-question {
+      margin: 0.6rem 0;
+      line-height: 2.2;
+    }
+
+    .blank-input {
+      display: inline-block;
+      border: none;
+      border-bottom: 2px solid var(--uwtsd-navy);
+      background: transparent;
+      font-family: inherit;
+      font-size: inherit;
+      color: var(--uwtsd-text);
+      padding: 0.05em 0.3em;
+      width: 14em;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      vertical-align: baseline;
+    }
+
+    .blank-input:focus { border-bottom-color: var(--uwtsd-gold); }
+
+    .blank-input.blank-correct {
+      border-bottom-color: #27ae60;
+      background: rgba(39,174,96,0.09);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .blank-input.blank-incorrect {
+      border-bottom-color: #e74c3c;
+      background: rgba(231,76,60,0.09);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .blank-feedback {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-top: 0.2rem;
+      min-height: 1.2em;
+    }
+
+    .feedback-correct { color: #27ae60; }
+    .feedback-incorrect { color: #c0392b; }
+
+    .check-blanks-btn {
+      display: inline-block;
+      margin: 0.75rem 0 0.25rem;
+      padding: 0.5rem 1.2rem;
+      background: var(--uwtsd-gold);
+      color: var(--uwtsd-navy);
+      border: none;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .check-blanks-btn:hover { background: #b8952e; }
+
+    /* ---- Multiple choice ---- */
+    .mc-block { margin: 0.75rem 0 1rem; }
+
+    .mc-item {
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+      background: #fff;
+    }
+
+    .mc-question-text { font-weight: 600; margin-bottom: 0.5rem; }
+
+    .mc-options { display: flex; flex-direction: column; gap: 0; margin: 0.4rem 0; }
+
+    .mc-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.35rem 0.5rem;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.1s;
+    }
+    .mc-option:hover { background: #f0f4ff; }
+
+    .mc-option input[type=radio] { margin-top: 0.2em; flex-shrink: 0; }
+
+    .mc-option.mc-correct   { color: #27ae60; font-weight: 600; }
+    .mc-option.mc-incorrect { color: #e74c3c; }
+
+    .mc-explanation {
+      display: none;
+      font-size: 0.88rem;
+      color: var(--uwtsd-muted);
+      margin-top: 0.4rem;
+      padding: 0.4rem 0.6rem;
+      border-left: 3px solid var(--uwtsd-gold);
+      background: #fffdf0;
+    }
+    .mc-explanation.visible { display: block; }
+
+    .mc-feedback {
+      font-size: 0.82rem;
+      font-weight: 600;
+      min-height: 1.2em;
+      margin-top: 0.25rem;
+    }
+
+    .mc-item-static { margin-bottom: 0.75rem; }
+    .mc-options-static { padding-left: 1.4rem; margin: 0.4rem 0; }
+
+    /* ---- Short answer ---- */
+    .sa-block { margin: 0.75rem 0 1rem; }
+
+    .sa-item {
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+      background: #fff;
+    }
+
+    .sa-question-text { font-weight: 600; margin-bottom: 0.5rem; }
+
+    .sa-textarea {
+      width: 100%;
+      min-height: 6rem;
+      padding: 0.5rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.93rem;
+      border: 1px solid #ccd0da;
+      border-radius: 4px;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+      color: var(--uwtsd-text);
+      background: #fafbfc;
+      box-sizing: border-box;
+    }
+    .sa-textarea:focus { outline: none; border-color: var(--uwtsd-navy); }
+
+    .sa-reveal-btn {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      background: transparent;
+      color: var(--uwtsd-navy);
+      border: 1px solid var(--uwtsd-navy);
+      border-radius: 4px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sa-reveal-btn:hover { background: var(--uwtsd-navy); color: white; }
+
+    .sa-answer-panel {
+      display: none;
+      margin-top: 0.5rem;
+      padding: 0.6rem 0.85rem;
+      background: #f0f4f0;
+      border-left: 3px solid #27ae60;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.93rem;
+    }
+    .sa-answer-panel.visible { display: block; }
+
+    .sa-item-static { margin-bottom: 0.75rem; }
+    .sa-lines {
+      border-bottom: 1px solid #aaa;
+      min-height: 5rem;
+      margin-top: 0.4rem;
+    }
+
+    /* ---- Math blocks (KaTeX pre-rendered) ---- */
+    .math-block {
+      margin: 1rem 0;
+      overflow-x: auto;
+      text-align: center;
+    }
+    .math-block .katex-display { margin: 0; }
+
+    /* ---- Visualization blocks (D3) ---- */
+    .viz-block {
+      margin: 1rem 0;
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* ---- Print stylesheet ---- */
+    @media print {
+      .lab-header { background: white; color: black; border-bottom: 2px solid #003366; }
+      .lab-header img { filter: none; }
+      .lab-header-text .module-code { color: #003366; }
+      .lab-header-text .lab-meta { color: #555; }
+      body { background: white; font-size: 13px; }
+      main { max-width: 100%; margin: 0; padding: 0 1rem; }
+      .lab-section { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+      pre { white-space: pre-wrap; word-break: break-word; }
+      a { color: inherit; text-decoration: none; }
+      .solution-btn { display: none; }
+      .solution-panel { display: block !important; }
+      .check-blanks-btn { display: none; }
+      .blank-input { border-bottom: 1px solid #555; min-width: 8em; background: transparent !important; }
+      .blank-feedback { display: none; }
+      .mc-option { break-inside: avoid; }
+      .mc-option input[type=radio] { display: none; }
+      .sa-reveal-btn { display: none; }
+      .sa-textarea { border: 1px solid #999; background: transparent !important; min-height: 5rem; }
+      .sa-answer-panel { display: block !important; border-left: 2px solid #555; background: #f9f9f9; }
+      @page {
+        margin: 1.8cm 2cm;
+        @top-right { content: "ACCA7023"; font-size: 9pt; color: #555; }
+        @bottom-center { content: counter(page) " of " counter(pages); font-size: 9pt; }
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="lab-header">
+  <img src="https://www.uwtsd.ac.uk/themes/custom/rutherford/images/logo.svg"
+       alt="University of Wales Trinity Saint David">
+  <div class="lab-header-text">
+    <div class="module-code">ACCA7023 - Agile and DevOps</div>
+    <h1>Notes API and the Repository Pattern</h1>
+  </div>
+</header>
+
+<main>
+
+  <section class="lab-section">
+    <h2>Overview</h2>
+    <p>This lab builds the back end of the Notes product: a small REST API written in TypeScript with Express. It can create, list, edit and delete notes, and report its own health. The API is deliberately small. What matters is how it is put together. Storage sits behind an interface, a factory decides which storage to build, and configuration is read once in one place. Those three choices are what make the code easy to test and safe to change.</p>
+  </section>
+
+  <section class="lab-section">
+    <h2>Learning Objectives</h2>
+    <p>By the end of this lab you will be able to:</p>
+    <ul>
+      <li>Explain how a repository interface lowers the coupling between request handling and storage</li>
+      <li>Implement a Factory function that is the only code naming a concrete repository class</li>
+      <li>Explain why a configuration module behaves as a Singleton and what that guarantees</li>
+      <li>Implement REST handlers that choose correct status codes for success, invalid input and missing resources</li>
+      <li>Run and exercise an Express API locally from the command line</li>
+    </ul>
+  </section>
+
+  <section class="lab-section">
+    <h2>Concept</h2>
+    <p>The quickest way to write a notes API is to keep an array inside the route file and have every handler read and write it directly. It works, and it is hard to live with. The handlers cannot be tested without the array, the array cannot be swapped for a database without rewriting every handler, and a rule such as "titles are required" ends up copied into each route that accepts a note.</p>
+<p><strong>Coupling</strong> is how much one part of a program has to know about another. <strong>Cohesion</strong> is how closely the things inside one part belong together. The design in this lab lowers the first and raises the second. A <strong>repository</strong> is an object whose only job is storing and finding notes. The routes depend on a <code>NoteRepository</code> <strong>interface</strong>, a list of method signatures with no implementation, so they work with any class that provides those methods.</p>
+<p>Something still has to choose a concrete class. The <strong>Factory</strong> pattern puts that choice in one function, <code>createNoteRepository(storeType)</code>. The <strong>Singleton</strong> pattern guarantees one shared instance of something. In Node.js a module is evaluated once and then cached, so an object exported from <code>config.ts</code> is the same object in every file that imports it. You will use <code>express.Router()</code> to group routes, <code>express.json()</code> to parse request bodies, and <code>res.status()</code> to set response codes.</p>
+  </section>
+
+  <section class="lab-section">
+    <h2>Packages</h2>
+    <table class="pkg-table">
+      <thead>
+        <tr><th>Package</th><th>Description</th><th>Docs</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>express</strong></td>
+          <td>Web framework that routes HTTP requests to handler functions</td>
+          <td><a href="https://expressjs.com/" target="_blank">expressjs.com/</a></td>
+        </tr>
+        <tr>
+          <td><strong>typescript</strong></td>
+          <td>Adds static types to JavaScript and compiles to plain JavaScript</td>
+          <td><a href="https://www.typescriptlang.org/docs/" target="_blank">www.typescriptlang.org/docs/</a></td>
+        </tr>
+        <tr>
+          <td><strong>tsx</strong></td>
+          <td>Runs TypeScript files directly and restarts when they change</td>
+          <td><a href="https://tsx.is/" target="_blank">tsx.is/</a></td>
+        </tr>
+        <tr>
+          <td><strong>eslint</strong></td>
+          <td>Reports likely defects and unused code</td>
+          <td><a href="https://eslint.org/docs/latest/" target="_blank">eslint.org/docs/latest/</a></td>
+        </tr>
+        <tr>
+          <td><strong>prettier</strong></td>
+          <td>Formats code consistently</td>
+          <td><a href="https://prettier.io/docs/" target="_blank">prettier.io/docs/</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="lab-section">
+    <h2>Tasks</h2>
+
+    <div class="task-block">
+      <h3>Task 1 - Start a branch and set up the server project</h3>
+      
+<p>You need Node.js 22 installed. Run every command in this practical in a <strong>Git Bash</strong> terminal, which Visual Studio Code offers in its terminal drop-down. The commands assume it.</p>
+<p>Move the <strong>Health endpoint</strong> and <strong>Create a note</strong> cards to <code>In progress</code> on your board, then start a branch from an up-to-date <code>main</code>, as you did in the Agile Setup and Git Workflow lab.</p>
+
+
+<pre><code class="language-bash">git switch main
+git pull
+git switch -c feature/notes-api</code></pre>
+
+<p>Create a folder named <code>server</code> in the root of the repository. Inside it create <code>package.json</code> with the content below. It lists the packages the server needs and gives short names to the commands you will run. The test scripts have nothing to run yet.</p>
+
+<div class="code-file-header">server/package.json</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-json">{
+  &quot;name&quot;: &quot;notes-server&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;private&quot;: true,
+  &quot;description&quot;: &quot;Express API for the notes application&quot;,
+  &quot;main&quot;: &quot;dist/server.js&quot;,
+  &quot;scripts&quot;: {
+    &quot;dev&quot;: &quot;tsx watch src/server.ts&quot;,
+    &quot;build&quot;: &quot;tsc -p tsconfig.build.json&quot;,
+    &quot;start&quot;: &quot;node dist/server.js&quot;,
+    &quot;lint&quot;: &quot;eslint .&quot;,
+    &quot;format:check&quot;: &quot;prettier --check .&quot;,
+    &quot;format&quot;: &quot;prettier --write .&quot;,
+    &quot;typecheck&quot;: &quot;tsc --noEmit&quot;,
+    &quot;test&quot;: &quot;vitest run&quot;,
+    &quot;test:unit&quot;: &quot;vitest run tests/unit&quot;,
+    &quot;test:integration&quot;: &quot;vitest run tests/integration&quot;,
+    &quot;test:coverage&quot;: &quot;vitest run --coverage&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;express&quot;: &quot;^5.3.0&quot;
+  },
+  &quot;devDependencies&quot;: {
+    &quot;@eslint/js&quot;: &quot;^10.0.1&quot;,
+    &quot;@types/express&quot;: &quot;^5.0.6&quot;,
+    &quot;@types/node&quot;: &quot;^22.20.5&quot;,
+    &quot;@types/supertest&quot;: &quot;^7.2.1&quot;,
+    &quot;@vitest/coverage-v8&quot;: &quot;^5.0.4&quot;,
+    &quot;eslint&quot;: &quot;^10.12.0&quot;,
+    &quot;prettier&quot;: &quot;^3.9.10&quot;,
+    &quot;supertest&quot;: &quot;^7.3.1&quot;,
+    &quot;tsx&quot;: &quot;^4.23.15&quot;,
+    &quot;typescript&quot;: &quot;^6.0.3&quot;,
+    &quot;typescript-eslint&quot;: &quot;^8.71.2&quot;,
+    &quot;vitest&quot;: &quot;^5.0.4&quot;
+  }
+}</code></pre>
+
+<p>Create <code>server/tsconfig.json</code>. It tells the TypeScript compiler how strict to be and which files to check.</p>
+
+<div class="code-file-header">server/tsconfig.json</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-json">{
+  &quot;compilerOptions&quot;: {
+    &quot;target&quot;: &quot;ES2022&quot;,
+    &quot;module&quot;: &quot;NodeNext&quot;,
+    &quot;moduleResolution&quot;: &quot;NodeNext&quot;,
+    &quot;strict&quot;: true,
+    &quot;esModuleInterop&quot;: true,
+    &quot;skipLibCheck&quot;: true,
+    &quot;forceConsistentCasingInFileNames&quot;: true,
+    &quot;noEmit&quot;: true
+  },
+  &quot;include&quot;: [&quot;src&quot;, &quot;tests&quot;, &quot;vitest.config.mts&quot;]
+}</code></pre>
+
+<p>Create <code>server/tsconfig.build.json</code>. It reuses the settings above but compiles only the <code>src</code> folder into a <code>dist</code> folder.</p>
+
+<div class="code-file-header">server/tsconfig.build.json</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-json">{
+  &quot;extends&quot;: &quot;./tsconfig.json&quot;,
+  &quot;compilerOptions&quot;: {
+    &quot;noEmit&quot;: false,
+    &quot;rootDir&quot;: &quot;src&quot;,
+    &quot;outDir&quot;: &quot;dist&quot;
+  },
+  &quot;include&quot;: [&quot;src&quot;]
+}</code></pre>
+
+<p>Create <code>server/eslint.config.mjs</code> for the linter.</p>
+
+<div class="code-file-header">server/eslint.config.mjs</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-javascript">import js from '@eslint/js';
+import { defineConfig } from 'eslint/config';
+import tseslint from 'typescript-eslint';
+
+export default defineConfig(
+  { ignores: ['dist', 'coverage'] },
+  js.configs.recommended,
+  tseslint.configs.recommended,
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
+    },
+  },
+);</code></pre>
+
+<p>Create <code>server/.prettierignore</code> so the formatter leaves generated files alone.</p>
+
+<div class="code-file-header">server/.prettierignore</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-bash">node_modules
+dist
+coverage
+public
+playwright-report
+test-results
+package-lock.json</code></pre>
+
+<p>Install the packages. This creates <code>package-lock.json</code>, which records the exact version of every package installed. Commit that file when you commit your work. It is what lets another machine install exactly what you tested.</p>
+
+
+<pre><code class="language-bash">cd server
+npm install</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 2 - Read configuration once</h3>
+      <p>Create a folder <code>server/src</code>, and in it <code>config.ts</code>. This is the only file in the back end that reads environment variables. Every other file imports the <code>config</code> object. <code>Object.freeze</code> stops any of them changing it.</p>
+
+<div class="code-file-header">server/src/config.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">import path from 'node:path';
+
+export interface AppConfig {
+  port: number;
+  storeType: string;
+  publicDir: string;
+  version: string;
+}
+
+function loadConfig(): AppConfig {
+  return {
+    port: Number(process.env.PORT ?? 3000),
+    storeType: process.env.STORE_TYPE ?? 'memory',
+    publicDir: path.resolve(process.env.PUBLIC_DIR ?? 'public'),
+    version: process.env.APP_VERSION ?? 'dev',
+  };
+}
+
+// Node caches a module after its first import, so every file that imports
+// config receives this same frozen object. The environment is read once.
+export const config: AppConfig = Object.freeze(loadConfig());</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 3 - Define what a repository must do</h3>
+      <p>Create a folder <code>server/src/repositories</code>, and in it <code>NoteRepository.ts</code>. It contains no behaviour at all, only shapes. Every method returns a <code>Promise</code> so that a store which has to wait for a database could implement the same interface.</p>
+
+<div class="code-file-header">server/src/repositories/NoteRepository.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">export interface Note {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoteInput {
+  title: string;
+  body: string;
+}
+
+// The routes depend on this interface only. They never name a concrete store.
+export interface NoteRepository {
+  findAll(): Promise&lt;Note[]&gt;;
+  findById(id: string): Promise&lt;Note | undefined&gt;;
+  create(input: NoteInput): Promise&lt;Note&gt;;
+  update(id: string, input: NoteInput): Promise&lt;Note | undefined&gt;;
+  delete(id: string): Promise&lt;boolean&gt;;
+}</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 4 - Implement the in-memory repository</h3>
+      
+<p>Create <code>server/src/repositories/InMemoryNoteRepository.ts</code>. It keeps notes in a <code>Map</code> keyed by id. Three methods are written for you. Complete <code>update()</code> and <code>delete()</code>.</p>
+<ol>
+  <li>In <code>update()</code>, look up the existing note. If there is none, return <code>undefined</code>.</li>
+  <li>Otherwise build a new note that keeps the existing <code>id</code> and <code>createdAt</code>, takes <code>title</code> and <code>body</code> from <code>input</code>, and sets <code>updatedAt</code> to the current time. Store it and return it.</li>
+  <li>In <code>delete()</code>, remove the note and return whether anything was removed. <code>Map.delete()</code> already returns exactly that.</li>
+</ol>
+
+<div class="code-file-header">server/src/repositories/InMemoryNoteRepository.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">import { randomUUID } from 'node:crypto';
+import type { Note, NoteInput, NoteRepository } from './NoteRepository';
+
+export class InMemoryNoteRepository implements NoteRepository {
+  private readonly notes = new Map&lt;string, Note&gt;();
+
+  async findAll(): Promise&lt;Note[]&gt; {
+    return [...this.notes.values()];
+  }
+
+  async findById(id: string): Promise&lt;Note | undefined&gt; {
+    return this.notes.get(id);
+  }
+
+  async create(input: NoteInput): Promise&lt;Note&gt; {
+    const now = new Date().toISOString();
+    const note: Note = {
+      id: randomUUID(),
+      title: input.title,
+      body: input.body,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.notes.set(note.id, note);
+    return note;
+  }
+
+  async update(id: string, input: NoteInput): Promise&lt;Note | undefined&gt; {
+    // TODO: return undefined if no note has this id
+    // TODO: build the updated note, store it under the same id, return it
+    return undefined;
+  }
+
+  async delete(id: string): Promise&lt;boolean&gt; {
+    // TODO: remove the note and return whether anything was removed
+    return false;
+  }
+}</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 5 - Implement the repository factory</h3>
+      
+<p>Create <code>server/src/repositories/repositoryFactory.ts</code> and complete <code>createNoteRepository()</code>.</p>
+<ol>
+  <li>When <code>storeType</code> is <code>'memory'</code>, return a new <code>InMemoryNoteRepository</code>.</li>
+  <li>For any other value, throw an <code>Error</code> whose message is <code>Unknown store type: </code> followed by the value. A server that starts with a store it does not understand should stop loudly, not carry on with a guess.</li>
+</ol>
+
+<div class="code-file-header">server/src/repositories/repositoryFactory.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">import { InMemoryNoteRepository } from './InMemoryNoteRepository';
+import type { NoteRepository } from './NoteRepository';
+
+// The only place in the back end that names a concrete repository class.
+export function createNoteRepository(storeType: string): NoteRepository {
+  // TODO: switch on storeType
+  // TODO: 'memory' returns a new InMemoryNoteRepository
+  // TODO: anything else throws an Error naming the unknown store type
+}</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 6 - Keep the rules in one place</h3>
+      <p>Create <code>server/src/validation.ts</code>. It decides whether a request body is an acceptable note. It knows nothing about HTTP and nothing about storage, which is what makes it cohesive. It returns either the cleaned-up note or the complete list of problems, never a mixture.</p>
+
+<div class="code-file-header">server/src/validation.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">import type { NoteInput } from './repositories/NoteRepository';
+
+export const MAX_TITLE_LENGTH = 100;
+export const MAX_BODY_LENGTH = 2000;
+
+export type ValidationResult =
+  { ok: true; value: NoteInput } | { ok: false; errors: string[] };
+
+export function validateNoteInput(payload: unknown): ValidationResult {
+  const errors: string[] = [];
+  const data = (payload ?? {}) as Record&lt;string, unknown&gt;;
+
+  const title = typeof data.title === 'string' ? data.title.trim() : '';
+  if (title.length === 0) {
+    errors.push('Title is required');
+  } else if (title.length &gt; MAX_TITLE_LENGTH) {
+    errors.push(`Title must be ${MAX_TITLE_LENGTH} characters or fewer`);
+  }
+
+  let body = '';
+  if (data.body !== undefined) {
+    if (typeof data.body !== 'string') {
+      errors.push('Body must be text');
+    } else if (data.body.length &gt; MAX_BODY_LENGTH) {
+      errors.push(`Body must be ${MAX_BODY_LENGTH} characters or fewer`);
+    } else {
+      body = data.body.trim();
+    }
+  }
+
+  if (errors.length &gt; 0) {
+    return { ok: false, errors };
+  }
+  return { ok: true, value: { title, body } };
+}</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 7 - Add the health route</h3>
+      <p>Create a folder <code>server/src/routes</code>, and in it <code>health.ts</code>. The response includes the version from <code>config</code>, so anybody can ask a running server which build it is.</p>
+
+<div class="code-file-header">server/src/routes/health.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">import { Router } from 'express';
+import { config } from '../config';
+
+export function createHealthRouter(): Router {
+  const router = Router();
+
+  router.get('/', (_req, res) =&gt; {
+    res.json({
+      status: 'ok',
+      version: config.version,
+      uptimeSeconds: Math.round(process.uptime()),
+    });
+  });
+
+  return router;
+}</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 8 - Implement the notes routes</h3>
+      
+<p>Create <code>server/src/routes/notes.ts</code>. The router receives its repository as an argument and never imports a concrete one. <code>GET</code> and <code>POST</code> are written for you. Complete <code>PUT</code> and <code>DELETE</code>.</p>
+<ol>
+  <li><code>PUT /:id</code> validates the body exactly as <code>POST</code> does, and answers <code>400</code> with the errors if it is invalid.</li>
+  <li>It then calls <code>repository.update()</code> with <code>req.params.id</code>. If that returns nothing, answer <code>404</code> with <code>{ errors: ['Note not found'] }</code>. Otherwise answer with the updated note.</li>
+  <li><code>DELETE /:id</code> calls <code>repository.delete()</code>. If nothing was deleted, answer <code>404</code> in the same shape. Otherwise answer <code>204</code> with no body, using <code>res.status(204).end()</code>.</li>
+</ol>
+
+<div class="code-file-header">server/src/routes/notes.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">import { Router } from 'express';
+import type { NoteRepository } from '../repositories/NoteRepository';
+import { validateNoteInput } from '../validation';
+
+// Each handler does three things only: read the request, call the
+// repository, and choose a status code. The rules live elsewhere.
+export function createNotesRouter(repository: NoteRepository): Router {
+  const router = Router();
+
+  router.get('/', async (_req, res) =&gt; {
+    res.json(await repository.findAll());
+  });
+
+  router.post('/', async (req, res) =&gt; {
+    const result = validateNoteInput(req.body);
+    if (!result.ok) {
+      res.status(400).json({ errors: result.errors });
+      return;
+    }
+    const note = await repository.create(result.value);
+    res.status(201).json(note);
+  });
+
+  router.put('/:id', async (req, res) =&gt; {
+    // TODO: validate req.body, answer 400 with the errors if invalid
+    // TODO: update the note, answer 404 if it does not exist
+    // TODO: otherwise answer with the updated note
+  });
+
+  router.delete('/:id', async (req, res) =&gt; {
+    // TODO: delete the note, answer 404 if nothing was deleted
+    // TODO: otherwise answer 204 with no body
+  });
+
+  return router;
+}</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 9 - Assemble the application</h3>
+      <p>Create <code>server/src/app.ts</code>. <code>createApp()</code> builds the Express application from a repository it is handed. It mounts the two routers, answers unknown <code>/api</code> paths with a JSON <code>404</code>, serves a folder of static files if one exists at the path it is given, and turns malformed JSON into a <code>400</code>. It does not start listening. That separation is deliberate. An application object that is not attached to a network port can be created as many times as you like.</p>
+
+<div class="code-file-header">server/src/app.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">import fs from 'node:fs';
+import path from 'node:path';
+import express from 'express';
+import type { ErrorRequestHandler, Express } from 'express';
+import type { NoteRepository } from './repositories/NoteRepository';
+import { createHealthRouter } from './routes/health';
+import { createNotesRouter } from './routes/notes';
+
+// The repository is passed in, so a test can hand the app a fresh store
+// and production can hand it whatever the factory built.
+export function createApp(
+  repository: NoteRepository,
+  publicDir?: string,
+): Express {
+  const app = express();
+  app.disable('x-powered-by');
+  app.use(express.json());
+
+  app.use('/api/health', createHealthRouter());
+  app.use('/api/notes', createNotesRouter(repository));
+
+  app.use('/api', (_req, res) =&gt; {
+    res.status(404).json({ errors: ['Not found'] });
+  });
+
+  // In production the built front end is served from the same process.
+  if (publicDir &amp;&amp; fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+    app.use((_req, res) =&gt; {
+      res.sendFile(path.join(publicDir, 'index.html'));
+    });
+  }
+
+  const errorHandler: ErrorRequestHandler = (err, _req, res, _next) =&gt; {
+    if (err instanceof SyntaxError) {
+      res.status(400).json({ errors: ['Request body is not valid JSON'] });
+      return;
+    }
+    console.error(err);
+    res.status(500).json({ errors: ['Internal server error'] });
+  };
+  app.use(errorHandler);
+
+  return app;
+}</code></pre>
+
+<p>Create <code>server/src/server.ts</code>. This is the only file that joins the pieces to real things: the real configuration, the factory, and a network port.</p>
+
+<div class="code-file-header">server/src/server.ts</div>
+<pre style="border-radius:0 0 6px 6px;margin-top:0"><code class="language-typescript">import { createApp } from './app';
+import { config } from './config';
+import { createNoteRepository } from './repositories/repositoryFactory';
+
+const repository = createNoteRepository(config.storeType);
+const app = createApp(repository, config.publicDir);
+
+app.listen(config.port, () =&gt; {
+  console.log(`Notes API listening on port ${config.port}`);
+});</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 10 - Run the API and exercise it</h3>
+      <p>Start the server from the <code>server</code> folder. It restarts by itself whenever you save a file.</p>
+
+
+<pre><code class="language-bash">npm run dev</code></pre>
+
+<p>Open a second Git Bash terminal and send requests to it.</p>
+
+
+<pre><code class="language-bash"># Health
+curl -s http://localhost:3000/api/health
+
+# Create a note. Copy the id from the response.
+curl -s -X POST http://localhost:3000/api/notes \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;title&quot;:&quot;Milk&quot;,&quot;body&quot;:&quot;Two pints&quot;}'
+
+# List notes
+curl -s http://localhost:3000/api/notes
+
+# Update the note. Replace ID with the id you copied.
+curl -s -X PUT http://localhost:3000/api/notes/ID \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;title&quot;:&quot;Oat milk&quot;,&quot;body&quot;:&quot;One carton&quot;}'
+
+# A note with no title. -i shows the status line.
+curl -i -X POST http://localhost:3000/api/notes \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;body&quot;:&quot;No title&quot;}'
+
+# Delete the note, then try to delete it again
+curl -i -X DELETE http://localhost:3000/api/notes/ID
+curl -i -X DELETE http://localhost:3000/api/notes/ID</code></pre>
+
+
+<p><strong>Success condition:</strong> health answers <code>{"status":"ok","version":"dev",...}</code>. Creating answers with the note and an id. Updating answers with the new title and the same id. The note with no title gets <code>400</code> and <code>Title is required</code>. The first delete gets <code>204</code> and the second gets <code>404</code>.</p>
+<p>Stop the server with <code>Ctrl+C</code>, start it again, and list the notes. The list is empty. The notes lived in the memory of the process you stopped. Keep that limitation in mind. It is a known one, not a defect.</p>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 11 - Check quality and merge</h3>
+      <p>Run the three static checks from the <code>server</code> folder. <code>npm run format</code> rewrites files to the agreed style, so run it first if the format check complains.</p>
+
+
+<pre><code class="language-bash">npm run lint
+npm run typecheck
+npm run format
+npm run format:check</code></pre>
+
+<p><strong>Success condition:</strong> all three checks finish without reporting a problem.</p>
+<p>Commit, push, and merge through a pull request that closes the Health endpoint story. The other stories are not finished until a user can do them through a page, so leave those cards where they are.</p>
+
+
+<pre><code class="language-bash">cd ..
+git add .
+git commit -m &quot;Add notes API with repository, factory and validation&quot;
+git push -u origin feature/notes-api</code></pre>
+    </div>
+
+    <div class="task-block">
+      <h3>Task 12 - Evaluate</h3>
+      <div class="sa-block"><div class="sa-item">
+  <p class="sa-question-text">Suppose notes must now be stored in PostgreSQL. List the files you would add or change, and the files you would not need to touch.</p>
+  <textarea class="sa-textarea" rows="4" placeholder="Write your answer here..."></textarea>
+  <button class="sa-reveal-btn" onclick="toggleModelAnswer(this)">Show Model Answer</button>
+  <div class="sa-answer-panel">Add a PostgresNoteRepository class implementing NoteRepository. Change repositoryFactory.ts to return it for a new store type, and config.ts if a connection string is needed. The routes, validation, app.ts and server.ts do not change, because they depend only on the interface and the factory. That short list of changes is the practical meaning of low coupling.</div>
+</div>
+<div class="sa-item">
+  <p class="sa-question-text">The config object is a Singleton. Give one benefit of that here and one risk that Singletons carry in general.</p>
+  <textarea class="sa-textarea" rows="4" placeholder="Write your answer here..."></textarea>
+  <button class="sa-reveal-btn" onclick="toggleModelAnswer(this)">Show Model Answer</button>
+  <div class="sa-answer-panel">Benefit: the environment is read and interpreted once, so every part of the program agrees on the port, store type and version, and there is one place to look when a setting is wrong. Risk: a Singleton is shared global state. Code that reaches for it directly is harder to test with different settings, and if it were mutable, one part of the program could change behaviour for every other part. Freezing the object removes the second risk but not the first.</div>
+</div>
+<div class="sa-item">
+  <p class="sa-question-text">createApp() takes the repository as a parameter instead of calling the factory itself. What does that make possible?</p>
+  <textarea class="sa-textarea" rows="4" placeholder="Write your answer here..."></textarea>
+  <button class="sa-reveal-btn" onclick="toggleModelAnswer(this)">Show Model Answer</button>
+  <div class="sa-answer-panel">It lets the caller decide which repository the application uses. Production passes whatever the factory built from configuration. Any other caller can pass a fresh in-memory repository, or a fake one that fails on purpose, and get a complete application around it without changing any application code.</div>
+</div></div>
+    </div>
+
+  </section>
+
+  <section class="lab-section worked-solution">
+    <h2>Solution</h2>
+    <p>Try the tasks above before revealing the solution.</p>
+    <button class="solution-btn" onclick="toggleSolution(this)">Show Solution</button>
+    <div class="solution-panel">
+      <div class="solution-canvas-wrap"><canvas data-code="import path from 'node:path';
+
+export interface AppConfig {
+  port: number;
+  storeType: string;
+  publicDir: string;
+  version: string;
+}
+
+function loadConfig(): AppConfig {
+  return {
+    port: Number(process.env.PORT ?? 3000),
+    storeType: process.env.STORE_TYPE ?? 'memory',
+    publicDir: path.resolve(process.env.PUBLIC_DIR ?? 'public'),
+    version: process.env.APP_VERSION ?? 'dev',
+  };
+}
+
+// Node caches a module after its first import, so every file that imports
+// config receives this same frozen object. The environment is read once.
+export const config: AppConfig = Object.freeze(loadConfig());" data-filename="server/src/config.ts" style="display:block;border-radius:6px"></canvas></div>
+      <div class="solution-canvas-wrap"><canvas data-code="export interface Note {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoteInput {
+  title: string;
+  body: string;
+}
+
+// The routes depend on this interface only. They never name a concrete store.
+export interface NoteRepository {
+  findAll(): Promise&lt;Note[]&gt;;
+  findById(id: string): Promise&lt;Note | undefined&gt;;
+  create(input: NoteInput): Promise&lt;Note&gt;;
+  update(id: string, input: NoteInput): Promise&lt;Note | undefined&gt;;
+  delete(id: string): Promise&lt;boolean&gt;;
+}" data-filename="server/src/repositories/NoteRepository.ts" style="display:block;border-radius:6px"></canvas></div>
+      <div class="solution-canvas-wrap"><canvas data-code="import { randomUUID } from 'node:crypto';
+import type { Note, NoteInput, NoteRepository } from './NoteRepository';
+
+export class InMemoryNoteRepository implements NoteRepository {
+  private readonly notes = new Map&lt;string, Note&gt;();
+
+  async findAll(): Promise&lt;Note[]&gt; {
+    return [...this.notes.values()];
+  }
+
+  async findById(id: string): Promise&lt;Note | undefined&gt; {
+    return this.notes.get(id);
+  }
+
+  async create(input: NoteInput): Promise&lt;Note&gt; {
+    const now = new Date().toISOString();
+    const note: Note = {
+      id: randomUUID(),
+      title: input.title,
+      body: input.body,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.notes.set(note.id, note);
+    return note;
+  }
+
+  async update(id: string, input: NoteInput): Promise&lt;Note | undefined&gt; {
+    const existing = this.notes.get(id);
+    if (!existing) {
+      return undefined;
+    }
+    const updated: Note = {
+      ...existing,
+      title: input.title,
+      body: input.body,
+      updatedAt: new Date().toISOString(),
+    };
+    this.notes.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string): Promise&lt;boolean&gt; {
+    return this.notes.delete(id);
+  }
+}" data-filename="server/src/repositories/InMemoryNoteRepository.ts" style="display:block;border-radius:6px"></canvas></div>
+      <div class="solution-canvas-wrap"><canvas data-code="import { InMemoryNoteRepository } from './InMemoryNoteRepository';
+import type { NoteRepository } from './NoteRepository';
+
+// The only place in the back end that names a concrete repository class.
+export function createNoteRepository(storeType: string): NoteRepository {
+  switch (storeType) {
+    case 'memory':
+      return new InMemoryNoteRepository();
+    default:
+      throw new Error(`Unknown store type: ${storeType}`);
+  }
+}" data-filename="server/src/repositories/repositoryFactory.ts" style="display:block;border-radius:6px"></canvas></div>
+      <div class="solution-canvas-wrap"><canvas data-code="import type { NoteInput } from './repositories/NoteRepository';
+
+export const MAX_TITLE_LENGTH = 100;
+export const MAX_BODY_LENGTH = 2000;
+
+export type ValidationResult =
+  { ok: true; value: NoteInput } | { ok: false; errors: string[] };
+
+export function validateNoteInput(payload: unknown): ValidationResult {
+  const errors: string[] = [];
+  const data = (payload ?? {}) as Record&lt;string, unknown&gt;;
+
+  const title = typeof data.title === 'string' ? data.title.trim() : '';
+  if (title.length === 0) {
+    errors.push('Title is required');
+  } else if (title.length &gt; MAX_TITLE_LENGTH) {
+    errors.push(`Title must be ${MAX_TITLE_LENGTH} characters or fewer`);
+  }
+
+  let body = '';
+  if (data.body !== undefined) {
+    if (typeof data.body !== 'string') {
+      errors.push('Body must be text');
+    } else if (data.body.length &gt; MAX_BODY_LENGTH) {
+      errors.push(`Body must be ${MAX_BODY_LENGTH} characters or fewer`);
+    } else {
+      body = data.body.trim();
+    }
+  }
+
+  if (errors.length &gt; 0) {
+    return { ok: false, errors };
+  }
+  return { ok: true, value: { title, body } };
+}" data-filename="server/src/validation.ts" style="display:block;border-radius:6px"></canvas></div>
+      <div class="solution-canvas-wrap"><canvas data-code="import { Router } from 'express';
+import { config } from '../config';
+
+export function createHealthRouter(): Router {
+  const router = Router();
+
+  router.get('/', (_req, res) =&gt; {
+    res.json({
+      status: 'ok',
+      version: config.version,
+      uptimeSeconds: Math.round(process.uptime()),
+    });
+  });
+
+  return router;
+}" data-filename="server/src/routes/health.ts" style="display:block;border-radius:6px"></canvas></div>
+      <div class="solution-canvas-wrap"><canvas data-code="import { Router } from 'express';
+import type { NoteRepository } from '../repositories/NoteRepository';
+import { validateNoteInput } from '../validation';
+
+// Each handler does three things only: read the request, call the
+// repository, and choose a status code. The rules live elsewhere.
+export function createNotesRouter(repository: NoteRepository): Router {
+  const router = Router();
+
+  router.get('/', async (_req, res) =&gt; {
+    res.json(await repository.findAll());
+  });
+
+  router.post('/', async (req, res) =&gt; {
+    const result = validateNoteInput(req.body);
+    if (!result.ok) {
+      res.status(400).json({ errors: result.errors });
+      return;
+    }
+    const note = await repository.create(result.value);
+    res.status(201).json(note);
+  });
+
+  router.put('/:id', async (req, res) =&gt; {
+    const result = validateNoteInput(req.body);
+    if (!result.ok) {
+      res.status(400).json({ errors: result.errors });
+      return;
+    }
+    const note = await repository.update(req.params.id, result.value);
+    if (!note) {
+      res.status(404).json({ errors: ['Note not found'] });
+      return;
+    }
+    res.json(note);
+  });
+
+  router.delete('/:id', async (req, res) =&gt; {
+    const deleted = await repository.delete(req.params.id);
+    if (!deleted) {
+      res.status(404).json({ errors: ['Note not found'] });
+      return;
+    }
+    res.status(204).end();
+  });
+
+  return router;
+}" data-filename="server/src/routes/notes.ts" style="display:block;border-radius:6px"></canvas></div>
+      <div class="solution-canvas-wrap"><canvas data-code="import fs from 'node:fs';
+import path from 'node:path';
+import express from 'express';
+import type { ErrorRequestHandler, Express } from 'express';
+import type { NoteRepository } from './repositories/NoteRepository';
+import { createHealthRouter } from './routes/health';
+import { createNotesRouter } from './routes/notes';
+
+// The repository is passed in, so a test can hand the app a fresh store
+// and production can hand it whatever the factory built.
+export function createApp(
+  repository: NoteRepository,
+  publicDir?: string,
+): Express {
+  const app = express();
+  app.disable('x-powered-by');
+  app.use(express.json());
+
+  app.use('/api/health', createHealthRouter());
+  app.use('/api/notes', createNotesRouter(repository));
+
+  app.use('/api', (_req, res) =&gt; {
+    res.status(404).json({ errors: ['Not found'] });
+  });
+
+  // In production the built front end is served from the same process.
+  if (publicDir &amp;&amp; fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+    app.use((_req, res) =&gt; {
+      res.sendFile(path.join(publicDir, 'index.html'));
+    });
+  }
+
+  const errorHandler: ErrorRequestHandler = (err, _req, res, _next) =&gt; {
+    if (err instanceof SyntaxError) {
+      res.status(400).json({ errors: ['Request body is not valid JSON'] });
+      return;
+    }
+    console.error(err);
+    res.status(500).json({ errors: ['Internal server error'] });
+  };
+  app.use(errorHandler);
+
+  return app;
+}" data-filename="server/src/app.ts" style="display:block;border-radius:6px"></canvas></div>
+      <div class="solution-canvas-wrap"><canvas data-code="import { createApp } from './app';
+import { config } from './config';
+import { createNoteRepository } from './repositories/repositoryFactory';
+
+const repository = createNoteRepository(config.storeType);
+const app = createApp(repository, config.publicDir);
+
+app.listen(config.port, () =&gt; {
+  console.log(`Notes API listening on port ${config.port}`);
+});" data-filename="server/src/server.ts" style="display:block;border-radius:6px"></canvas></div>
+    </div>
+  </section>
+</main>
+
+<script>
+  function switchTab(e, id) {
+    const section = e.target.closest('.lab-section');
+    section.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    section.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    section.querySelector('#' + id).classList.add('active');
+  }
+
+  function renderSolutionCanvas(canvas, code, filename) {
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var lineHeight = 19;
+    var headerHeight = filename ? 28 : 0;
+    var padX = 20;
+    var padY = 14;
+    var codeFont = '13px Consolas, "Courier New", monospace';
+    ctx.font = codeFont;
+    var lines = code.split('\n').map(function(l) { return l.replace(/\r$/, ''); });
+    while (lines.length && lines[lines.length - 1] === '') lines.pop();
+    var maxW = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var w = ctx.measureText(lines[i]).width;
+      if (w > maxW) maxW = w;
+    }
+    var containerW = canvas.parentElement ? (canvas.parentElement.clientWidth || 0) : 0;
+    var cssW = Math.max(maxW + padX * 2, containerW || 400);
+    var cssH = lines.length * lineHeight + padY * 2 + headerHeight;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    ctx.scale(dpr, dpr);
+    if (filename) {
+      ctx.fillStyle = '#2d2d2d';
+      ctx.fillRect(0, 0, cssW, headerHeight);
+      ctx.font = '11px Consolas, "Courier New", monospace';
+      ctx.fillStyle = '#888888';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(filename, padX, headerHeight / 2);
+      ctx.fillStyle = '#444444';
+      ctx.fillRect(0, headerHeight - 1, cssW, 1);
+    }
+    ctx.fillStyle = '#1E1E1E';
+    ctx.fillRect(0, headerHeight, cssW, cssH - headerHeight);
+    ctx.font = codeFont;
+    ctx.fillStyle = '#cccccc';
+    ctx.textBaseline = 'top';
+    for (var i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], padX, headerHeight + padY + i * lineHeight);
+    }
+  }
+
+  function toggleSolution(btn) {
+    var panel = btn.nextElementSibling;
+    var open = panel.classList.toggle('open');
+    btn.textContent = open ? 'Hide Solution' : 'Show Solution';
+    if (open) {
+      panel.querySelectorAll('canvas[data-code]').forEach(function(c) {
+        if (!c.dataset.rendered) {
+          renderSolutionCanvas(c, c.dataset.code, c.dataset.filename || '');
+          c.dataset.rendered = '1';
+        }
+      });
+    }
+  }
+
+  function checkBlanks(btn) {
+    var task = btn.closest('.task-block');
+    task.querySelectorAll('.blank-question').forEach(function(q) {
+      var answers = JSON.parse(q.dataset.answers);
+      var inputs = q.querySelectorAll('.blank-input');
+      var allCorrect = true;
+      inputs.forEach(function(input, i) {
+        var expected = [].concat(answers[i]).map(function(s) { return s.toLowerCase().trim(); });
+        var val = input.value.toLowerCase().trim();
+        var ok = expected.indexOf(val) !== -1;
+        input.classList.toggle('blank-correct', ok);
+        input.classList.toggle('blank-incorrect', !ok && val !== '');
+        if (!ok) allCorrect = false;
+      });
+      var fb = q.querySelector('.blank-feedback');
+      fb.textContent = allCorrect ? 'Correct!' : 'Check your answer.';
+      fb.className = 'blank-feedback ' + (allCorrect ? 'feedback-correct' : 'feedback-incorrect');
+    });
+  }
+
+  function revealMCAnswer(radio) {
+    var item    = radio.closest('.mc-item');
+    var correct = parseInt(item.dataset.correct, 10);
+    var radios  = Array.from(item.querySelectorAll('input[type=radio]'));
+    var chosen  = radios.indexOf(radio);
+    item.querySelectorAll('.mc-option').forEach(function(opt, i) {
+      opt.classList.toggle('mc-correct',   i === correct);
+      opt.classList.toggle('mc-incorrect', i === chosen && i !== correct);
+    });
+    var fb = item.querySelector('.mc-feedback');
+    if (fb) {
+      fb.textContent = chosen === correct ? 'Correct!' : 'Incorrect.';
+      fb.className   = 'mc-feedback ' + (chosen === correct ? 'feedback-correct' : 'feedback-incorrect');
+    }
+    var exp = item.querySelector('.mc-explanation');
+    if (exp) exp.classList.add('visible');
+    item.querySelectorAll('input[type=radio]').forEach(function(r) { r.disabled = true; });
+  }
+
+  function toggleModelAnswer(btn) {
+    var panel = btn.nextElementSibling;
+    var open  = panel.classList.toggle('visible');
+    btn.textContent = open ? 'Hide Model Answer' : 'Show Model Answer';
+  }
+</script>
+
+<script>/**
+ * Minified by jsDelivr using Terser v5.39.0.
+ * Original file: /npm/prismjs@1.29.0/prism.js
+ *
+ * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
+ */
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(e){var t=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,n=0,a={},r={manual:e.Prism&&e.Prism.manual,disableWorkerMessageHandler:e.Prism&&e.Prism.disableWorkerMessageHandler,util:{encode:function e(t){return t instanceof s?new s(t.type,e(t.content),t.alias):Array.isArray(t)?t.map(e):t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).slice(8,-1)},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++n}),e.__id},clone:function e(t,n){var a,s;switch(n=n||{},r.util.type(t)){case"Object":if(s=r.util.objId(t),n[s])return n[s];for(var i in a={},n[s]=a,t)t.hasOwnProperty(i)&&(a[i]=e(t[i],n));return a;case"Array":return s=r.util.objId(t),n[s]?n[s]:(a=[],n[s]=a,t.forEach((function(t,r){a[r]=e(t,n)})),a);default:return t}},getLanguage:function(e){for(;e;){var n=t.exec(e.className);if(n)return n[1].toLowerCase();e=e.parentElement}return"none"},setLanguage:function(e,n){e.className=e.className.replace(RegExp(t,"gi"),""),e.classList.add("language-"+n)},currentScript:function(){if("undefined"==typeof document)return null;if("currentScript"in document)return document.currentScript;try{throw new Error}catch(a){var e=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(a.stack)||[])[1];if(e){var t=document.getElementsByTagName("script");for(var n in t)if(t[n].src==e)return t[n]}return null}},isActive:function(e,t,n){for(var a="no-"+t;e;){var r=e.classList;if(r.contains(t))return!0;if(r.contains(a))return!1;e=e.parentElement}return!!n}},languages:{plain:a,plaintext:a,text:a,txt:a,extend:function(e,t){var n=r.util.clone(r.languages[e]);for(var a in t)n[a]=t[a];return n},insertBefore:function(e,t,n,a){var s=(a=a||r.languages)[e],i={};for(var o in s)if(s.hasOwnProperty(o)){if(o==t)for(var l in n)n.hasOwnProperty(l)&&(i[l]=n[l]);n.hasOwnProperty(o)||(i[o]=s[o])}var u=a[e];return a[e]=i,r.languages.DFS(r.languages,(function(t,n){n===u&&t!=e&&(this[t]=i)})),i},DFS:function e(t,n,a,s){s=s||{};var i=r.util.objId;for(var o in t)if(t.hasOwnProperty(o)){n.call(t,o,t[o],a||o);var l=t[o],u=r.util.type(l);"Object"!==u||s[i(l)]?"Array"!==u||s[i(l)]||(s[i(l)]=!0,e(l,n,o,s)):(s[i(l)]=!0,e(l,n,null,s))}}},plugins:{},highlightAll:function(e,t){r.highlightAllUnder(document,e,t)},highlightAllUnder:function(e,t,n){var a={callback:n,container:e,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};r.hooks.run("before-highlightall",a),a.elements=Array.prototype.slice.apply(a.container.querySelectorAll(a.selector)),r.hooks.run("before-all-elements-highlight",a);for(var s,i=0;s=a.elements[i++];)r.highlightElement(s,!0===t,a.callback)},highlightElement:function(t,n,a){var s=r.util.getLanguage(t),i=r.languages[s];r.util.setLanguage(t,s);var o=t.parentElement;o&&"pre"===o.nodeName.toLowerCase()&&r.util.setLanguage(o,s);var l={element:t,language:s,grammar:i,code:t.textContent};function u(e){l.highlightedCode=e,r.hooks.run("before-insert",l),l.element.innerHTML=l.highlightedCode,r.hooks.run("after-highlight",l),r.hooks.run("complete",l),a&&a.call(l.element)}if(r.hooks.run("before-sanity-check",l),(o=l.element.parentElement)&&"pre"===o.nodeName.toLowerCase()&&!o.hasAttribute("tabindex")&&o.setAttribute("tabindex","0"),!l.code)return r.hooks.run("complete",l),void(a&&a.call(l.element));if(r.hooks.run("before-highlight",l),l.grammar)if(n&&e.Worker){var g=new Worker(r.filename);g.onmessage=function(e){u(e.data)},g.postMessage(JSON.stringify({language:l.language,code:l.code,immediateClose:!0}))}else u(r.highlight(l.code,l.grammar,l.language));else u(r.util.encode(l.code))},highlight:function(e,t,n){var a={code:e,grammar:t,language:n};if(r.hooks.run("before-tokenize",a),!a.grammar)throw new Error('The language "'+a.language+'" has no grammar.');return a.tokens=r.tokenize(a.code,a.grammar),r.hooks.run("after-tokenize",a),s.stringify(r.util.encode(a.tokens),a.language)},tokenize:function(e,t){var n=t.rest;if(n){for(var a in n)t[a]=n[a];delete t.rest}var r=new l;return u(r,r.head,e),o(e,r,t,r.head,0),function(e){var t=[],n=e.head.next;for(;n!==e.tail;)t.push(n.value),n=n.next;return t}(r)},hooks:{all:{},add:function(e,t){var n=r.hooks.all;n[e]=n[e]||[],n[e].push(t)},run:function(e,t){var n=r.hooks.all[e];if(n&&n.length)for(var a,s=0;a=n[s++];)a(t)}},Token:s};function s(e,t,n,a){this.type=e,this.content=t,this.alias=n,this.length=0|(a||"").length}function i(e,t,n,a){e.lastIndex=t;var r=e.exec(n);if(r&&a&&r[1]){var s=r[1].length;r.index+=s,r[0]=r[0].slice(s)}return r}function o(e,t,n,a,l,c){for(var d in n)if(n.hasOwnProperty(d)&&n[d]){var p=n[d];p=Array.isArray(p)?p:[p];for(var m=0;m<p.length;++m){if(c&&c.cause==d+","+m)return;var h=p[m],f=h.inside,v=!!h.lookbehind,b=!!h.greedy,y=h.alias;if(b&&!h.pattern.global){var F=h.pattern.toString().match(/[imsuy]*$/)[0];h.pattern=RegExp(h.pattern.source,F+"g")}for(var x=h.pattern||h,k=a.next,w=l;k!==t.tail&&!(c&&w>=c.reach);w+=k.value.length,k=k.next){var A=k.value;if(t.length>e.length)return;if(!(A instanceof s)){var P,$=1;if(b){if(!(P=i(x,w,e,v))||P.index>=e.length)break;var S=P.index,E=P.index+P[0].length,_=w;for(_+=k.value.length;S>=_;)_+=(k=k.next).value.length;if(w=_-=k.value.length,k.value instanceof s)continue;for(var j=k;j!==t.tail&&(_<E||"string"==typeof j.value);j=j.next)$++,_+=j.value.length;$--,A=e.slice(w,_),P.index-=w}else if(!(P=i(x,0,A,v)))continue;S=P.index;var C=P[0],L=A.slice(0,S),z=A.slice(S+C.length),O=w+A.length;c&&O>c.reach&&(c.reach=O);var T=k.prev;if(L&&(T=u(t,T,L),w+=L.length),g(t,T,$),k=u(t,T,new s(d,f?r.tokenize(C,f):C,y,C)),z&&u(t,k,z),$>1){var M={cause:d+","+m,reach:O};o(e,t,n,k.prev,w,M),c&&M.reach>c.reach&&(c.reach=M.reach)}}}}}}function l(){var e={value:null,prev:null,next:null},t={value:null,prev:e,next:null};e.next=t,this.head=e,this.tail=t,this.length=0}function u(e,t,n){var a=t.next,r={value:n,prev:t,next:a};return t.next=r,a.prev=r,e.length++,r}function g(e,t,n){for(var a=t.next,r=0;r<n&&a!==e.tail;r++)a=a.next;t.next=a,a.prev=t,e.length-=r}if(e.Prism=r,s.stringify=function e(t,n){if("string"==typeof t)return t;if(Array.isArray(t)){var a="";return t.forEach((function(t){a+=e(t,n)})),a}var s={type:t.type,content:e(t.content,n),tag:"span",classes:["token",t.type],attributes:{},language:n},i=t.alias;i&&(Array.isArray(i)?Array.prototype.push.apply(s.classes,i):s.classes.push(i)),r.hooks.run("wrap",s);var o="";for(var l in s.attributes)o+=" "+l+'="'+(s.attributes[l]||"").replace(/"/g,"&quot;")+'"';return"<"+s.tag+' class="'+s.classes.join(" ")+'"'+o+">"+s.content+"</"+s.tag+">"},!e.document)return e.addEventListener?(r.disableWorkerMessageHandler||e.addEventListener("message",(function(t){var n=JSON.parse(t.data),a=n.language,s=n.code,i=n.immediateClose;e.postMessage(r.highlight(s,r.languages[a],a)),i&&e.close()}),!1),r):r;var c=r.util.currentScript();function d(){r.manual||r.highlightAll()}if(c&&(r.filename=c.src,c.hasAttribute("data-manual")&&(r.manual=!0)),!r.manual){var p=document.readyState;"loading"===p||"interactive"===p&&c&&c.defer?document.addEventListener("DOMContentLoaded",d):window.requestAnimationFrame?window.requestAnimationFrame(d):window.setTimeout(d,16)}return r}(_self);
+/**
+ * Prism: Lightweight, robust, elegant syntax highlighting
+ *
+ * @license MIT <https://opensource.org/licenses/MIT>
+ * @author Lea Verou <https://lea.verou.me>
+ * @namespace
+ * @public
+ */"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism),Prism.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},Prism.languages.markup.tag.inside["attr-value"].inside.entity=Prism.languages.markup.entity,Prism.languages.markup.doctype.inside["internal-subset"].inside=Prism.languages.markup,Prism.hooks.add("wrap",(function(e){"entity"===e.type&&(e.attributes.title=e.content.replace(/&amp;/,"&"))})),Object.defineProperty(Prism.languages.markup.tag,"addInlined",{value:function(e,t){var n={};n["language-"+t]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:Prism.languages[t]},n.cdata=/^<!\[CDATA\[|\]\]>$/i;var a={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:n}};a["language-"+t]={pattern:/[\s\S]+/,inside:Prism.languages[t]};var r={};r[e]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,(function(){return e})),"i"),lookbehind:!0,greedy:!0,inside:a},Prism.languages.insertBefore("markup","cdata",r)}}),Object.defineProperty(Prism.languages.markup.tag,"addAttribute",{value:function(e,t){Prism.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+e+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[t,"language-"+t],inside:Prism.languages[t]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),Prism.languages.html=Prism.languages.markup,Prism.languages.mathml=Prism.languages.markup,Prism.languages.svg=Prism.languages.markup,Prism.languages.xml=Prism.languages.extend("markup",{}),Prism.languages.ssml=Prism.languages.xml,Prism.languages.atom=Prism.languages.xml,Prism.languages.rss=Prism.languages.xml,function(e){var t=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;e.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+t.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+t.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+t.source+"$"),alias:"url"}}},selector:{pattern:RegExp("(^|[{}\\s])[^{}\\s](?:[^{};\"'\\s]|\\s+(?![\\s{])|"+t.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:t,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},e.languages.css.atrule.inside.rest=e.languages.css;var n=e.languages.markup;n&&(n.tag.addInlined("style","css"),n.tag.addAttribute("style","css"))}(Prism),Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},Prism.languages.javascript=Prism.languages.extend("clike",{"class-name":[Prism.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),Prism.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,Prism.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:Prism.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:Prism.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),Prism.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:Prism.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),Prism.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),Prism.languages.markup&&(Prism.languages.markup.tag.addInlined("script","javascript"),Prism.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),Prism.languages.js=Prism.languages.javascript,function(){if(void 0!==Prism&&"undefined"!=typeof document){Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var e={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},t="data-src-status",n="loading",a="loaded",r="pre[data-src]:not(["+t+'="'+a+'"]):not(['+t+'="'+n+'"])';Prism.hooks.add("before-highlightall",(function(e){e.selector+=", "+r})),Prism.hooks.add("before-sanity-check",(function(s){var i=s.element;if(i.matches(r)){s.code="",i.setAttribute(t,n);var o=i.appendChild(document.createElement("CODE"));o.textContent="Loading…";var l=i.getAttribute("data-src"),u=s.language;if("none"===u){var g=(/\.(\w+)$/.exec(l)||[,"none"])[1];u=e[g]||g}Prism.util.setLanguage(o,u),Prism.util.setLanguage(i,u);var c=Prism.plugins.autoloader;c&&c.loadLanguages(u),function(e,t,n){var a=new XMLHttpRequest;a.open("GET",e,!0),a.onreadystatechange=function(){4==a.readyState&&(a.status<400&&a.responseText?t(a.responseText):a.status>=400?n("✖ Error "+a.status+" while fetching file: "+a.statusText):n("✖ Error: File does not exist or is empty"))},a.send(null)}(l,(function(e){i.setAttribute(t,a);var n=function(e){var t=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(e||"");if(t){var n=Number(t[1]),a=t[2],r=t[3];return a?r?[n,Number(r)]:[n,void 0]:[n,n]}}(i.getAttribute("data-range"));if(n){var r=e.split(/\r\n?|\n/g),s=n[0],l=null==n[1]?r.length:n[1];s<0&&(s+=r.length),s=Math.max(0,Math.min(s-1,r.length)),l<0&&(l+=r.length),l=Math.max(0,Math.min(l,r.length)),e=r.slice(s,l).join("\n"),i.hasAttribute("data-start")||i.setAttribute("data-start",String(s+1))}o.textContent=e,Prism.highlightElement(o)}),(function(e){i.setAttribute(t,"failed"),o.textContent=e}))}})),Prism.plugins.fileHighlight={highlight:function(e){for(var t,n=(e||document).querySelectorAll(r),a=0;t=n[a++];)Prism.highlightElement(t)}};var s=!1;Prism.fileHighlight=function(){s||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),s=!0),Prism.plugins.fileHighlight.highlight.apply(this,arguments)}}}();
+//# sourceMappingURL=/sm/1f55244a569fc0911044b5e4725a97872b6d85b0662a3429a809bb62f713c381.map
+Prism.languages.javascript=Prism.languages.extend("clike",{"class-name":[Prism.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp("(^|[^\\w$])(?:NaN|Infinity|0[bB][01]+(?:_[01]+)*n?|0[oO][0-7]+(?:_[0-7]+)*n?|0[xX][\\dA-Fa-f]+(?:_[\\dA-Fa-f]+)*n?|\\d+(?:_\\d+)*n|(?:\\d+(?:_\\d+)*(?:\\.(?:\\d+(?:_\\d+)*)?)?|\\.\\d+(?:_\\d+)*)(?:[Ee][+-]?\\d+(?:_\\d+)*)?)(?![\\w$])"),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),Prism.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,Prism.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp("((?:^|[^$\\w\\xA0-\\uFFFF.\"'\\])\\s]|\\b(?:return|yield))\\s*)/(?:(?:\\[(?:[^\\]\\\\\r\n]|\\\\.)*\\]|\\\\.|[^/\\\\\\[\r\n])+/[dgimyus]{0,7}|(?:\\[(?:[^[\\]\\\\\r\n]|\\\\.|\\[(?:[^[\\]\\\\\r\n]|\\\\.|\\[(?:[^[\\]\\\\\r\n]|\\\\.)*\\])*\\])*\\]|\\\\.|[^/\\\\\\[\r\n])+/[dgimyus]{0,7}v[dgimyus]{0,7})(?=(?:\\s|/\\*(?:[^*]|\\*(?!/))*\\*/)*(?:$|[\r\n,.;:})\\]]|//))"),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:Prism.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:Prism.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),Prism.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:Prism.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),Prism.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),Prism.languages.markup&&(Prism.languages.markup.tag.addInlined("script","javascript"),Prism.languages.markup.tag.addAttribute("on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)","javascript")),Prism.languages.js=Prism.languages.javascript;
+!function(e){e.languages.typescript=e.languages.extend("javascript",{"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|type)\s+)(?!keyof\b)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?:\s*<(?:[^<>]|<(?:[^<>]|<[^<>]*>)*>)*>)?/,lookbehind:!0,greedy:!0,inside:null},builtin:/\b(?:Array|Function|Promise|any|boolean|console|never|number|string|symbol|unknown)\b/}),e.languages.typescript.keyword.push(/\b(?:abstract|declare|is|keyof|readonly|require)\b/,/\b(?:asserts|infer|interface|module|namespace|type)\b(?=\s*(?:[{_$a-zA-Z\xA0-\uFFFF]|$))/,/\btype\b(?=\s*(?:[\{*]|$))/),delete e.languages.typescript.parameter,delete e.languages.typescript["literal-property"];var s=e.languages.extend("typescript",{});delete s["class-name"],e.languages.typescript["class-name"].inside=s,e.languages.insertBefore("typescript","function",{decorator:{pattern:/@[$\w\xA0-\uFFFF]+/,inside:{at:{pattern:/^@/,alias:"operator"},function:/^[\s\S]+/}},"generic-function":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*<(?:[^<>]|<(?:[^<>]|<[^<>]*>)*>)*>(?=\s*\()/,greedy:!0,inside:{function:/^#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*/,generic:{pattern:/<[\s\S]+/,alias:"class-name",inside:s}}}}),e.languages.ts=e.languages.typescript}(Prism);
+Prism.languages.json={property:{pattern:/(^|[^\\])"(?:\\.|[^\\"\r\n])*"(?=\s*:)/,lookbehind:!0,greedy:!0},string:{pattern:/(^|[^\\])"(?:\\.|[^\\"\r\n])*"(?!\s*:)/,lookbehind:!0,greedy:!0},comment:{pattern:/\/\/.*|\/\*[\s\S]*?(?:\*\/|$)/,greedy:!0},number:/-?\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b/i,punctuation:/[{}[\],]/,operator:/:/,boolean:/\b(?:false|true)\b/,null:{pattern:/\bnull\b/,alias:"keyword"}},Prism.languages.webmanifest=Prism.languages.json;
+Prism.languages.javascript=Prism.languages.extend("clike",{"class-name":[Prism.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp("(^|[^\\w$])(?:NaN|Infinity|0[bB][01]+(?:_[01]+)*n?|0[oO][0-7]+(?:_[0-7]+)*n?|0[xX][\\dA-Fa-f]+(?:_[\\dA-Fa-f]+)*n?|\\d+(?:_\\d+)*n|(?:\\d+(?:_\\d+)*(?:\\.(?:\\d+(?:_\\d+)*)?)?|\\.\\d+(?:_\\d+)*)(?:[Ee][+-]?\\d+(?:_\\d+)*)?)(?![\\w$])"),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),Prism.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,Prism.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp("((?:^|[^$\\w\\xA0-\\uFFFF.\"'\\])\\s]|\\b(?:return|yield))\\s*)/(?:(?:\\[(?:[^\\]\\\\\r\n]|\\\\.)*\\]|\\\\.|[^/\\\\\\[\r\n])+/[dgimyus]{0,7}|(?:\\[(?:[^[\\]\\\\\r\n]|\\\\.|\\[(?:[^[\\]\\\\\r\n]|\\\\.|\\[(?:[^[\\]\\\\\r\n]|\\\\.)*\\])*\\])*\\]|\\\\.|[^/\\\\\\[\r\n])+/[dgimyus]{0,7}v[dgimyus]{0,7})(?=(?:\\s|/\\*(?:[^*]|\\*(?!/))*\\*/)*(?:$|[\r\n,.;:})\\]]|//))"),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:Prism.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:Prism.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:Prism.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),Prism.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:Prism.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),Prism.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),Prism.languages.markup&&(Prism.languages.markup.tag.addInlined("script","javascript"),Prism.languages.markup.tag.addAttribute("on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)","javascript")),Prism.languages.js=Prism.languages.javascript;
+!function(e){var t="\\b(?:BASH|BASHOPTS|BASH_ALIASES|BASH_ARGC|BASH_ARGV|BASH_CMDS|BASH_COMPLETION_COMPAT_DIR|BASH_LINENO|BASH_REMATCH|BASH_SOURCE|BASH_VERSINFO|BASH_VERSION|COLORTERM|COLUMNS|COMP_WORDBREAKS|DBUS_SESSION_BUS_ADDRESS|DEFAULTS_PATH|DESKTOP_SESSION|DIRSTACK|DISPLAY|EUID|GDMSESSION|GDM_LANG|GNOME_KEYRING_CONTROL|GNOME_KEYRING_PID|GPG_AGENT_INFO|GROUPS|HISTCONTROL|HISTFILE|HISTFILESIZE|HISTSIZE|HOME|HOSTNAME|HOSTTYPE|IFS|INSTANCE|JOB|LANG|LANGUAGE|LC_ADDRESS|LC_ALL|LC_IDENTIFICATION|LC_MEASUREMENT|LC_MONETARY|LC_NAME|LC_NUMERIC|LC_PAPER|LC_TELEPHONE|LC_TIME|LESSCLOSE|LESSOPEN|LINES|LOGNAME|LS_COLORS|MACHTYPE|MAILCHECK|MANDATORY_PATH|NO_AT_BRIDGE|OLDPWD|OPTERR|OPTIND|ORBIT_SOCKETDIR|OSTYPE|PAPERSIZE|PATH|PIPESTATUS|PPID|PS1|PS2|PS3|PS4|PWD|RANDOM|REPLY|SECONDS|SELINUX_INIT|SESSION|SESSIONTYPE|SESSION_MANAGER|SHELL|SHELLOPTS|SHLVL|SSH_AUTH_SOCK|TERM|UID|UPSTART_EVENTS|UPSTART_INSTANCE|UPSTART_JOB|UPSTART_SESSION|USER|WINDOWID|XAUTHORITY|XDG_CONFIG_DIRS|XDG_CURRENT_DESKTOP|XDG_DATA_DIRS|XDG_GREETER_DATA_DIR|XDG_MENU_PREFIX|XDG_RUNTIME_DIR|XDG_SEAT|XDG_SEAT_PATH|XDG_SESSION_DESKTOP|XDG_SESSION_ID|XDG_SESSION_PATH|XDG_SESSION_TYPE|XDG_VTNR|XMODIFIERS)\\b",a={pattern:/(^(["']?)\w+\2)[ \t]+\S.*/,lookbehind:!0,alias:"punctuation",inside:null},n={bash:a,environment:{pattern:RegExp("\\$"+t),alias:"constant"},variable:[{pattern:/\$?\(\([\s\S]+?\)\)/,greedy:!0,inside:{variable:[{pattern:/(^\$\(\([\s\S]+)\)\)/,lookbehind:!0},/^\$\(\(/],number:/\b0x[\dA-Fa-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:[Ee]-?\d+)?/,operator:/--|\+\+|\*\*=?|<<=?|>>=?|&&|\|\||[=!+\-*/%<>^&|]=?|[?~:]/,punctuation:/\(\(?|\)\)?|,|;/}},{pattern:/\$\((?:\([^)]+\)|[^()])+\)|`[^`]+`/,greedy:!0,inside:{variable:/^\$\(|^`|\)$|`$/}},{pattern:/\$\{[^}]+\}/,greedy:!0,inside:{operator:/:[-=?+]?|[!\/]|##?|%%?|\^\^?|,,?/,punctuation:/[\[\]]/,environment:{pattern:RegExp("(\\{)"+t),lookbehind:!0,alias:"constant"}}},/\$(?:\w+|[#?*!@$])/],entity:/\\(?:[abceEfnrtv\\"]|O?[0-7]{1,3}|U[0-9a-fA-F]{8}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{1,2})/};e.languages.bash={shebang:{pattern:/^#!\s*\/.*/,alias:"important"},comment:{pattern:/(^|[^"{\\$])#.*/,lookbehind:!0},"function-name":[{pattern:/(\bfunction\s+)[\w-]+(?=(?:\s*\(?:\s*\))?\s*\{)/,lookbehind:!0,alias:"function"},{pattern:/\b[\w-]+(?=\s*\(\s*\)\s*\{)/,alias:"function"}],"for-or-select":{pattern:/(\b(?:for|select)\s+)\w+(?=\s+in\s)/,alias:"variable",lookbehind:!0},"assign-left":{pattern:/(^|[\s;|&]|[<>]\()\w+(?:\.\w+)*(?=\+?=)/,inside:{environment:{pattern:RegExp("(^|[\\s;|&]|[<>]\\()"+t),lookbehind:!0,alias:"constant"}},alias:"variable",lookbehind:!0},parameter:{pattern:/(^|\s)-{1,2}(?:\w+:[+-]?)?\w+(?:\.\w+)*(?=[=\s]|$)/,alias:"variable",lookbehind:!0},string:[{pattern:/((?:^|[^<])<<-?\s*)(\w+)\s[\s\S]*?(?:\r?\n|\r)\2/,lookbehind:!0,greedy:!0,inside:n},{pattern:/((?:^|[^<])<<-?\s*)(["'])(\w+)\2\s[\s\S]*?(?:\r?\n|\r)\3/,lookbehind:!0,greedy:!0,inside:{bash:a}},{pattern:/(^|[^\\](?:\\\\)*)"(?:\\[\s\S]|\$\([^)]+\)|\$(?!\()|`[^`]+`|[^"\\`$])*"/,lookbehind:!0,greedy:!0,inside:n},{pattern:/(^|[^$\\])'[^']*'/,lookbehind:!0,greedy:!0},{pattern:/\$'(?:[^'\\]|\\[\s\S])*'/,greedy:!0,inside:{entity:n.entity}}],environment:{pattern:RegExp("\\$?"+t),alias:"constant"},variable:n.variable,function:{pattern:/(^|[\s;|&]|[<>]\()(?:add|apropos|apt|apt-cache|apt-get|aptitude|aspell|automysqlbackup|awk|basename|bash|bc|bconsole|bg|bzip2|cal|cargo|cat|cfdisk|chgrp|chkconfig|chmod|chown|chroot|cksum|clear|cmp|column|comm|composer|cp|cron|crontab|csplit|curl|cut|date|dc|dd|ddrescue|debootstrap|df|diff|diff3|dig|dir|dircolors|dirname|dirs|dmesg|docker|docker-compose|du|egrep|eject|env|ethtool|expand|expect|expr|fdformat|fdisk|fg|fgrep|file|find|fmt|fold|format|free|fsck|ftp|fuser|gawk|git|gparted|grep|groupadd|groupdel|groupmod|groups|grub-mkconfig|gzip|halt|head|hg|history|host|hostname|htop|iconv|id|ifconfig|ifdown|ifup|import|install|ip|java|jobs|join|kill|killall|less|link|ln|locate|logname|logrotate|look|lpc|lpr|lprint|lprintd|lprintq|lprm|ls|lsof|lynx|make|man|mc|mdadm|mkconfig|mkdir|mke2fs|mkfifo|mkfs|mkisofs|mknod|mkswap|mmv|more|most|mount|mtools|mtr|mutt|mv|nano|nc|netstat|nice|nl|node|nohup|notify-send|npm|nslookup|op|open|parted|passwd|paste|pathchk|ping|pkill|pnpm|podman|podman-compose|popd|pr|printcap|printenv|ps|pushd|pv|quota|quotacheck|quotactl|ram|rar|rcp|reboot|remsync|rename|renice|rev|rm|rmdir|rpm|rsync|scp|screen|sdiff|sed|sendmail|seq|service|sftp|sh|shellcheck|shuf|shutdown|sleep|slocate|sort|split|ssh|stat|strace|su|sudo|sum|suspend|swapon|sync|sysctl|tac|tail|tar|tee|time|timeout|top|touch|tr|traceroute|tsort|tty|umount|uname|unexpand|uniq|units|unrar|unshar|unzip|update-grub|uptime|useradd|userdel|usermod|users|uudecode|uuencode|v|vcpkg|vdir|vi|vim|virsh|vmstat|wait|watch|wc|wget|whereis|which|who|whoami|write|xargs|xdg-open|yarn|yes|zenity|zip|zsh|zypper)(?=$|[)\s;|&])/,lookbehind:!0},keyword:{pattern:/(^|[\s;|&]|[<>]\()(?:case|do|done|elif|else|esac|fi|for|function|if|in|select|then|until|while)(?=$|[)\s;|&])/,lookbehind:!0},builtin:{pattern:/(^|[\s;|&]|[<>]\()(?:\.|:|alias|bind|break|builtin|caller|cd|command|continue|declare|echo|enable|eval|exec|exit|export|getopts|hash|help|let|local|logout|mapfile|printf|pwd|read|readarray|readonly|return|set|shift|shopt|source|test|times|trap|type|typeset|ulimit|umask|unalias|unset)(?=$|[)\s;|&])/,lookbehind:!0,alias:"class-name"},boolean:{pattern:/(^|[\s;|&]|[<>]\()(?:false|true)(?=$|[)\s;|&])/,lookbehind:!0},"file-descriptor":{pattern:/\B&\d\b/,alias:"important"},operator:{pattern:/\d?<>|>\||\+=|=[=~]?|!=?|<<[<-]?|[&\d]?>>|\d[<>]&?|[<>][&=]?|&[>&]?|\|[&|]?/,inside:{"file-descriptor":{pattern:/^\d/,alias:"important"}}},punctuation:/\$?\(\(?|\)\)?|\.\.|[{}[\];\\]/,number:{pattern:/(^|\s)(?:[1-9]\d*|0)(?:[.,]\d+)?\b/,lookbehind:!0}},a.inside=e.languages.bash;for(var s=["comment","function-name","for-or-select","assign-left","parameter","string","environment","function","keyword","builtin","boolean","file-descriptor","operator","punctuation","number"],o=n.variable[1].inside,i=0;i<s.length;i++)o[s[i]]=e.languages.bash[s[i]];e.languages.sh=e.languages.bash,e.languages.shell=e.languages.bash}(Prism);</script>
+
+</body>
+</html>

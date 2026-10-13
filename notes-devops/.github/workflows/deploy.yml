@@ -1,0 +1,104 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# One deployment at a time. A second merge waits for the first to finish.
+concurrency: deploy-main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Publish image
+    runs-on: ubuntu-latest
+    needs: ci
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.name.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Work out the image name
+        id: name
+        # Registry names must be lower case, and GitHub user names may not be.
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build the image
+        run: docker build --build-arg APP_VERSION=${{ github.sha }} -t "${{ steps.name.outputs.image }}" .
+      - name: Push the image
+        run: docker push "${{ steps.name.outputs.image }}"
+
+  deploy:
+    name: Deploy to Azure Container Apps
+    runs-on: ubuntu-latest
+    needs: publish
+    permissions:
+      contents: read
+      # Allows this job to request the short-lived token Azure exchanges.
+      id-token: write
+    outputs:
+      url: ${{ steps.url.outputs.url }}
+    steps:
+      - name: Log in to Azure without a stored secret
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Create a new revision from the new image
+        run: |
+          az containerapp update \
+            --name "${{ vars.AZURE_CONTAINER_APP }}" \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --image "${{ needs.publish.outputs.image }}" \
+            --revision-suffix "sha-${GITHUB_SHA::7}-${GITHUB_RUN_ATTEMPT}" \
+            --output none
+      - name: Look up the public address
+        id: url
+        run: |
+          fqdn=$(az containerapp show \
+            --name "${{ vars.AZURE_CONTAINER_APP }}" \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          echo "url=https://${fqdn}" >> "$GITHUB_OUTPUT"
+      - name: List revisions in the run summary
+        run: |
+          {
+            echo "### Revisions"
+            echo '```'
+            az containerapp revision list \
+              --name "${{ vars.AZURE_CONTAINER_APP }}" \
+              --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+              --query "[].{name:name, active:properties.active, traffic:properties.trafficWeight, created:properties.createdTime}" \
+              --output table
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  smoke:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Wait for the new version to answer
+        run: |
+          url="${{ needs.deploy.outputs.url }}/api/health"
+          for attempt in $(seq 1 20); do
+            version=$(curl --silent --fail --max-time 10 "$url" | jq -r .version || true)
+            echo "Attempt ${attempt}: version=${version}"
+            if [ "$version" = "$GITHUB_SHA" ]; then
+              echo "The live site is serving ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "The live site never reported version ${GITHUB_SHA}"
+          exit 1

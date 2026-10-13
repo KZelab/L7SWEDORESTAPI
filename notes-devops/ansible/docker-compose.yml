@@ -1,0 +1,22 @@
+services:
+  control:
+    build: ./control
+    container_name: ansible-control
+    environment:
+      ANSIBLE_CONFIG: /ansible/ansible.cfg
+    volumes:
+      - .:/ansible
+
+  web1:
+    build: ./target
+    container_name: web1
+    hostname: web1
+    ports:
+      - '127.0.0.1:8181:80'
+
+  web2:
+    build: ./target
+    container_name: web2
+    hostname: web2
+    ports:
+      - '127.0.0.1:8182:80'

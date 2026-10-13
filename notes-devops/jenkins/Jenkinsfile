@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    // Jenkins on a lab machine cannot receive webhooks from GitHub, so it
+    // asks the repository every few minutes whether anything has changed.
+    triggers {
+        pollSCM('H/5 * * * *')
+    }
+
+    environment {
+        CI = 'true'
+    }
+
+    stages {
+        stage('Install') {
+            steps {
+                dir('server') { sh 'npm ci' }
+                dir('client') { sh 'npm ci' }
+                dir('e2e') {
+                    sh 'npm ci'
+                    sh 'npx playwright install chromium'
+                }
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                dir('server') {
+                    sh 'npm run lint'
+                    sh 'npm run format:check'
+                    sh 'npm run typecheck'
+                }
+                dir('client') {
+                    sh 'npm run lint'
+                    sh 'npm run format:check'
+                }
+            }
+        }
+
+        stage('Unit tests') {
+            steps {
+                dir('server') { sh 'npm run test:unit' }
+                dir('client') { sh 'npm run test:coverage' }
+            }
+        }
+
+        stage('Integration tests') {
+            steps {
+                dir('server') {
+                    sh 'npm run test:integration'
+                    sh 'npm run test:coverage'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('client') { sh 'npm run build' }
+                dir('server') { sh 'npm run build' }
+            }
+        }
+
+        stage('Browser tests') {
+            steps {
+                dir('e2e') { sh 'npx playwright test' }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'e2e/playwright-report/**', allowEmptyArchive: true
+        }
+    }
+}

@@ -14,7 +14,10 @@ const app: Express = express();
 
 //middleware
 app.use(morgan('dev')); //HTTP request logger
-app.use(cors()); //ENABLE CORS
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:5174'], // Allow Vite dev server
+    credentials: true
+})); //ENABLE CORS
 app.use(express.json()); //parse every received body as JSON
 
 //health check endpoint

@@ -1,0 +1,12 @@
+jenkins:
+  systemMessage: 'Notes CI comparison. This Jenkins is defined entirely by files in the jenkins folder.'
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: '${JENKINS_ADMIN_ID}'
+          password: '${JENKINS_ADMIN_PASSWORD}'
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
